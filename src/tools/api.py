@@ -1,9 +1,26 @@
-from typing import Dict, Any, List
-import pandas as pd
-import akshare as ak
+import json
+import os
+import traceback
 from datetime import datetime, timedelta
-import json 
+from typing import Any, Dict, List
+
+import akshare as ak
 import numpy as np
+import pandas as pd
+import tushare as ts
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Get Tushare token from environment variables
+TUSHARE_TOKEN = os.getenv("TUSHARE_TOKEN")
+if not TUSHARE_TOKEN:
+    raise ValueError("Tushare token not found in .env file. Please add TUSHARE_TOKEN=your_token")
+
+# Initialize tushare with token from .env
+ts.set_token(TUSHARE_TOKEN)
+pro = ts.pro_api()
 
 
 def get_financial_metrics(symbol: str) -> Dict[str, Any]:
@@ -18,7 +35,7 @@ def get_financial_metrics(symbol: str) -> Dict[str, Any]:
             print("警告：无法获取实时行情数据")
             return [{}]
 
-        stock_data = realtime_data[realtime_data['代码'] == symbol]
+        stock_data = realtime_data[realtime_data["代码"] == symbol]
         if stock_data.empty:
             print(f"警告：未找到股票 {symbol} 的实时行情数据")
             return [{}]
@@ -29,25 +46,22 @@ def get_financial_metrics(symbol: str) -> Dict[str, Any]:
         # 获取新浪财务指标
         print("\n获取新浪财务指标...")
         current_year = datetime.now().year
-        financial_data = ak.stock_financial_analysis_indicator(
-            symbol=symbol, start_year=str(current_year-1))
+        financial_data = ak.stock_financial_analysis_indicator(symbol=symbol, start_year=str(current_year - 1))
         if financial_data is None or financial_data.empty:
             print("警告：无法获取新浪财务指标数据")
             return [{}]
 
         # 按日期排序并获取最新的数据
-        financial_data['日期'] = pd.to_datetime(financial_data['日期'])
-        financial_data = financial_data.sort_values('日期', ascending=False)
-        latest_financial = financial_data.iloc[0] if not financial_data.empty else pd.Series(
-        )
+        financial_data["日期"] = pd.to_datetime(financial_data["日期"])
+        financial_data = financial_data.sort_values("日期", ascending=False)
+        latest_financial = financial_data.iloc[0] if not financial_data.empty else pd.Series()
         print(f"成功获取新浪财务指标数据，共 {len(financial_data)} 条记录")
         print(f"最新数据日期：{latest_financial.get('日期')}")
 
         # 获取利润表数据（用于计算 price_to_sales）
         print("\n获取利润表数据...")
         try:
-            income_statement = ak.stock_financial_report_sina(
-                stock=f"sh{symbol}", symbol="利润表")
+            income_statement = ak.stock_financial_report_sina(stock=f"sh{symbol}", symbol="利润表")
             if not income_statement.empty:
                 latest_income = income_statement.iloc[0]
                 print("成功获取利润表数据")
@@ -61,6 +75,7 @@ def get_financial_metrics(symbol: str) -> Dict[str, Any]:
         # 构建完整指标数据
         print("\n构建指标数据...")
         try:
+
             def convert_percentage(value: float) -> float:
                 """将百分比值转换为小数"""
                 try:
@@ -72,29 +87,29 @@ def get_financial_metrics(symbol: str) -> Dict[str, Any]:
                 # 市场数据
                 "market_cap": float(stock_data.get("总市值", 0)),
                 "float_market_cap": float(stock_data.get("流通市值", 0)),
-
                 # 盈利数据
                 "revenue": float(latest_income.get("营业总收入", 0)),
                 "net_income": float(latest_income.get("净利润", 0)),
                 "return_on_equity": convert_percentage(latest_financial.get("净资产收益率(%)", 0)),
                 "net_margin": convert_percentage(latest_financial.get("销售净利率(%)", 0)),
                 "operating_margin": convert_percentage(latest_financial.get("营业利润率(%)", 0)),
-
                 # 增长指标
                 "revenue_growth": convert_percentage(latest_financial.get("主营业务收入增长率(%)", 0)),
                 "earnings_growth": convert_percentage(latest_financial.get("净利润增长率(%)", 0)),
                 "book_value_growth": convert_percentage(latest_financial.get("净资产增长率(%)", 0)),
-
                 # 财务健康指标
                 "current_ratio": float(latest_financial.get("流动比率", 0)),
                 "debt_to_equity": convert_percentage(latest_financial.get("资产负债率(%)", 0)),
                 "free_cash_flow_per_share": float(latest_financial.get("每股经营性现金流(元)", 0)),
                 "earnings_per_share": float(latest_financial.get("加权每股收益(元)", 0)),
-
                 # 估值比率
                 "pe_ratio": float(stock_data.get("市盈率-动态", 0)),
                 "price_to_book": float(stock_data.get("市净率", 0)),
-                "price_to_sales": float(stock_data.get("总市值", 0)) / float(latest_income.get("营业总收入", 1)) if float(latest_income.get("营业总收入", 0)) > 0 else 0,
+                "price_to_sales": (
+                    float(stock_data.get("总市值", 0)) / float(latest_income.get("营业总收入", 1))
+                    if float(latest_income.get("营业总收入", 0)) > 0
+                    else 0
+                ),
             }
 
             # 只返回 agent 需要的指标
@@ -103,18 +118,15 @@ def get_financial_metrics(symbol: str) -> Dict[str, Any]:
                 "return_on_equity": all_metrics["return_on_equity"],
                 "net_margin": all_metrics["net_margin"],
                 "operating_margin": all_metrics["operating_margin"],
-
                 # 增长指标
                 "revenue_growth": all_metrics["revenue_growth"],
                 "earnings_growth": all_metrics["earnings_growth"],
                 "book_value_growth": all_metrics["book_value_growth"],
-
                 # 财务健康指标
                 "current_ratio": all_metrics["current_ratio"],
                 "debt_to_equity": all_metrics["debt_to_equity"],
                 "free_cash_flow_per_share": all_metrics["free_cash_flow_per_share"],
                 "earnings_per_share": all_metrics["earnings_per_share"],
-
                 # 估值比率
                 "pe_ratio": all_metrics["pe_ratio"],
                 "price_to_book": all_metrics["price_to_book"],
@@ -151,12 +163,10 @@ def get_financial_statements(symbol: str) -> Dict[str, Any]:
         # 获取资产负债表数据
         print("\n获取资产负债表数据...")
         try:
-            balance_sheet = ak.stock_financial_report_sina(
-                stock=f"sh{symbol}", symbol="资产负债表")
+            balance_sheet = ak.stock_financial_report_sina(stock=f"sh{symbol}", symbol="资产负债表")
             if not balance_sheet.empty:
                 latest_balance = balance_sheet.iloc[0]
-                previous_balance = balance_sheet.iloc[1] if len(
-                    balance_sheet) > 1 else balance_sheet.iloc[0]
+                previous_balance = balance_sheet.iloc[1] if len(balance_sheet) > 1 else balance_sheet.iloc[0]
                 print("成功获取资产负债表数据")
             else:
                 print("警告：无法获取资产负债表数据")
@@ -170,12 +180,10 @@ def get_financial_statements(symbol: str) -> Dict[str, Any]:
         # 获取利润表数据
         print("\n获取利润表数据...")
         try:
-            income_statement = ak.stock_financial_report_sina(
-                stock=f"sh{symbol}", symbol="利润表")
+            income_statement = ak.stock_financial_report_sina(stock=f"sh{symbol}", symbol="利润表")
             if not income_statement.empty:
                 latest_income = income_statement.iloc[0]
-                previous_income = income_statement.iloc[1] if len(
-                    income_statement) > 1 else income_statement.iloc[0]
+                previous_income = income_statement.iloc[1] if len(income_statement) > 1 else income_statement.iloc[0]
                 print("成功获取利润表数据")
             else:
                 print("警告：无法获取利润表数据")
@@ -189,12 +197,10 @@ def get_financial_statements(symbol: str) -> Dict[str, Any]:
         # 获取现金流量表数据
         print("\n获取现金流量表数据...")
         try:
-            cash_flow = ak.stock_financial_report_sina(
-                stock=f"sh{symbol}", symbol="现金流量表")
+            cash_flow = ak.stock_financial_report_sina(stock=f"sh{symbol}", symbol="现金流量表")
             if not cash_flow.empty:
                 latest_cash_flow = cash_flow.iloc[0]
-                previous_cash_flow = cash_flow.iloc[1] if len(
-                    cash_flow) > 1 else cash_flow.iloc[0]
+                previous_cash_flow = cash_flow.iloc[1] if len(cash_flow) > 1 else cash_flow.iloc[0]
                 print("成功获取现金流量表数据")
             else:
                 print("警告：无法获取现金流量表数据")
@@ -214,14 +220,18 @@ def get_financial_statements(symbol: str) -> Dict[str, Any]:
                 "net_income": float(latest_income.get("净利润", 0)),
                 "operating_revenue": float(latest_income.get("营业总收入", 0)),
                 "operating_profit": float(latest_income.get("营业利润", 0)),
-
                 # 从资产负债表计算营运资金
-                "working_capital": float(latest_balance.get("流动资产合计", 0)) - float(latest_balance.get("流动负债合计", 0)),
-
+                "working_capital": float(latest_balance.get("流动资产合计", 0))
+                - float(latest_balance.get("流动负债合计", 0)),
                 # 从现金流量表获取
-                "depreciation_and_amortization": float(latest_cash_flow.get("固定资产折旧、油气资产折耗、生产性生物资产折旧", 0)),
-                "capital_expenditure": abs(float(latest_cash_flow.get("购建固定资产、无形资产和其他长期资产支付的现金", 0))),
-                "free_cash_flow": float(latest_cash_flow.get("经营活动产生的现金流量净额", 0)) - abs(float(latest_cash_flow.get("购建固定资产、无形资产和其他长期资产支付的现金", 0)))
+                "depreciation_and_amortization": float(
+                    latest_cash_flow.get("固定资产折旧、油气资产折耗、生产性生物资产折旧", 0)
+                ),
+                "capital_expenditure": abs(
+                    float(latest_cash_flow.get("购建固定资产、无形资产和其他长期资产支付的现金", 0))
+                ),
+                "free_cash_flow": float(latest_cash_flow.get("经营活动产生的现金流量净额", 0))
+                - abs(float(latest_cash_flow.get("购建固定资产、无形资产和其他长期资产支付的现金", 0))),
             }
             line_items.append(current_item)
             print("成功处理最新期间数据")
@@ -231,10 +241,16 @@ def get_financial_statements(symbol: str) -> Dict[str, Any]:
                 "net_income": float(previous_income.get("净利润", 0)),
                 "operating_revenue": float(previous_income.get("营业总收入", 0)),
                 "operating_profit": float(previous_income.get("营业利润", 0)),
-                "working_capital": float(previous_balance.get("流动资产合计", 0)) - float(previous_balance.get("流动负债合计", 0)),
-                "depreciation_and_amortization": float(previous_cash_flow.get("固定资产折旧、油气资产折耗、生产性生物资产折旧", 0)),
-                "capital_expenditure": abs(float(previous_cash_flow.get("购建固定资产、无形资产和其他长期资产支付的现金", 0))),
-                "free_cash_flow": float(previous_cash_flow.get("经营活动产生的现金流量净额", 0)) - abs(float(previous_cash_flow.get("购建固定资产、无形资产和其他长期资产支付的现金", 0)))
+                "working_capital": float(previous_balance.get("流动资产合计", 0))
+                - float(previous_balance.get("流动负债合计", 0)),
+                "depreciation_and_amortization": float(
+                    previous_cash_flow.get("固定资产折旧、油气资产折耗、生产性生物资产折旧", 0)
+                ),
+                "capital_expenditure": abs(
+                    float(previous_cash_flow.get("购建固定资产、无形资产和其他长期资产支付的现金", 0))
+                ),
+                "free_cash_flow": float(previous_cash_flow.get("经营活动产生的现金流量净额", 0))
+                - abs(float(previous_cash_flow.get("购建固定资产、无形资产和其他长期资产支付的现金", 0))),
             }
             line_items.append(previous_item)
             print("成功处理上一期间数据")
@@ -248,7 +264,7 @@ def get_financial_statements(symbol: str) -> Dict[str, Any]:
                 "working_capital": 0,
                 "depreciation_and_amortization": 0,
                 "capital_expenditure": 0,
-                "free_cash_flow": 0
+                "free_cash_flow": 0,
             }
             line_items = [default_item, default_item]
 
@@ -263,7 +279,7 @@ def get_financial_statements(symbol: str) -> Dict[str, Any]:
             "working_capital": 0,
             "depreciation_and_amortization": 0,
             "capital_expenditure": 0,
-            "free_cash_flow": 0
+            "free_cash_flow": 0,
         }
         return [default_item, default_item]
 
@@ -273,7 +289,7 @@ def get_market_data(symbol: str) -> Dict[str, Any]:
     try:
         # 获取实时行情
         realtime_data = ak.stock_zh_a_spot_em()
-        stock_data = realtime_data[realtime_data['代码'] == symbol].iloc[0]
+        stock_data = realtime_data[realtime_data["代码"] == symbol].iloc[0]
 
         return {
             "market_cap": float(stock_data.get("总市值", 0)),
@@ -281,12 +297,27 @@ def get_market_data(symbol: str) -> Dict[str, Any]:
             # A股没有平均成交量，暂用当日成交量
             "average_volume": float(stock_data.get("成交量", 0)),
             "fifty_two_week_high": float(stock_data.get("52周最高", 0)),
-            "fifty_two_week_low": float(stock_data.get("52周最低", 0))
+            "fifty_two_week_low": float(stock_data.get("52周最低", 0)),
         }
 
     except Exception as e:
         print(f"Error getting market data: {e}")
         return {}
+
+
+# Convert regular stock code to tushare format
+def convert_to_tushare_code(code: str) -> str:
+    """Convert regular stock code to tushare format."""
+    # Remove any existing suffixes
+    code = code.split(".")[0]
+
+    # Add appropriate suffix
+    if code.startswith("6"):
+        return f"{code}.SH"
+    elif code.startswith(("0", "3")):
+        return f"{code}.SZ"
+    else:
+        raise ValueError(f"Unsupported stock code format: {code}")
 
 
 def get_price_history(symbol: str, start_date: str = None, end_date: str = None, adjust: str = "qfq") -> pd.DataFrame:
@@ -352,36 +383,34 @@ def get_price_history(symbol: str, start_date: str = None, end_date: str = None,
         print(f"结束日期：{end_date.strftime('%Y-%m-%d')}")
 
         def get_and_process_data(start_date, end_date):
+
+            ts_code = convert_to_tushare_code(symbol)
+
             """获取并处理数据，包括重命名列等操作"""
-            df = ak.stock_zh_a_hist(
-                symbol=symbol,
-                period="daily",
+            df_daily = pro.bak_daily(
+                ts_code=ts_code,
                 start_date=start_date.strftime("%Y%m%d"),
                 end_date=end_date.strftime("%Y%m%d"),
-                adjust=adjust
+                fields="trade_date,open,high,low,close,vol,amount,swing,pct_change,change,turn_over",
             )
 
-            if df is None or df.empty:
+            if df_daily is None or df_daily.empty:
                 return pd.DataFrame()
 
             # 重命名列以匹配技术分析代理的需求
-            df = df.rename(columns={
-                "日期": "date",
-                "开盘": "open",
-                "最高": "high",
-                "最低": "low",
-                "收盘": "close",
-                "成交量": "volume",
-                "成交额": "amount",
-                "振幅": "amplitude",
-                "涨跌幅": "pct_change",
-                "涨跌额": "change_amount",
-                "换手率": "turnover"
-            })
+            df_daily = df_daily.rename(
+                columns={
+                    "trade_date": "date",
+                    "vol": "volume",
+                    "swing": "amplitude",
+                    "change": "change_amount",
+                    "turn_over": "turnover",
+                }
+            )
 
             # 确保日期列为datetime类型
-            df["date"] = pd.to_datetime(df["date"])
-            return df
+            df_daily["date"] = pd.to_datetime(df_daily["date"])
+            return df_daily
 
         # 获取历史行情数据
         df = get_and_process_data(start_date, end_date)
@@ -393,8 +422,7 @@ def get_price_history(symbol: str, start_date: str = None, end_date: str = None,
         # 检查数据量是否足够
         min_required_days = 120  # 至少需要120个交易日的数据
         if len(df) < min_required_days:
-            print(
-                f"警告：获取到的数据量（{len(df)}条）不足以计算所有技术指标（需要至少{min_required_days}条）")
+            print(f"警告：获取到的数据量（{len(df)}条）不足以计算所有技术指标（需要至少{min_required_days}条）")
             print("尝试获取更长时间范围的数据...")
 
             # 扩大时间范围到2年
@@ -407,8 +435,7 @@ def get_price_history(symbol: str, start_date: str = None, end_date: str = None,
         # 计算动量指标
         df["momentum_1m"] = df["close"].pct_change(periods=20)  # 20个交易日约等于1个月
         df["momentum_3m"] = df["close"].pct_change(periods=60)  # 60个交易日约等于3个月
-        df["momentum_6m"] = df["close"].pct_change(
-            periods=120)  # 120个交易日约等于6个月
+        df["momentum_6m"] = df["close"].pct_change(periods=120)  # 120个交易日约等于6个月
 
         # 计算成交量动量（相对于20日平均成交量的变化）
         df["volume_ma20"] = df["volume"].rolling(window=20).mean()
@@ -417,8 +444,7 @@ def get_price_history(symbol: str, start_date: str = None, end_date: str = None,
         # 计算波动率指标
         # 1. 历史波动率 (20日)
         returns = df["close"].pct_change()
-        df["historical_volatility"] = returns.rolling(
-            window=20).std() * np.sqrt(252)  # 年化
+        df["historical_volatility"] = returns.rolling(window=20).std() * np.sqrt(252)  # 年化
 
         # 2. 波动率区间 (相对于过去120天的波动率的位置)
         volatility_120d = returns.rolling(window=120).std() * np.sqrt(252)
@@ -426,16 +452,13 @@ def get_price_history(symbol: str, start_date: str = None, end_date: str = None,
         vol_max = volatility_120d.rolling(window=120).max()
         vol_range = vol_max - vol_min
         df["volatility_regime"] = np.where(
-            vol_range > 0,
-            (df["historical_volatility"] - vol_min) / vol_range,
-            0  # 当范围为0时返回0
+            vol_range > 0, (df["historical_volatility"] - vol_min) / vol_range, 0  # 当范围为0时返回0
         )
 
         # 3. 波动率Z分数
         vol_mean = df["historical_volatility"].rolling(window=120).mean()
         vol_std = df["historical_volatility"].rolling(window=120).std()
-        df["volatility_z_score"] = (
-            df["historical_volatility"] - vol_mean) / vol_std
+        df["volatility_z_score"] = (df["historical_volatility"] - vol_mean) / vol_std
 
         # 4. ATR比率
         tr = pd.DataFrame()
@@ -503,10 +526,9 @@ def get_price_history(symbol: str, start_date: str = None, end_date: str = None,
 
         # 使用对数收益率计算Hurst指数
         log_returns = np.log(df["close"] / df["close"].shift(1))
-        df["hurst_exponent"] = log_returns.rolling(
-            window=120,
-            min_periods=60  # 要求至少60个数据点
-        ).apply(calculate_hurst)
+        df["hurst_exponent"] = log_returns.rolling(window=120, min_periods=60).apply(  # 要求至少60个数据点
+            calculate_hurst
+        )
 
         # 2. 偏度 (20日)
         df["skewness"] = returns.rolling(window=20).skew()
@@ -533,6 +555,11 @@ def get_price_history(symbol: str, start_date: str = None, end_date: str = None,
 
     except Exception as e:
         print(f"获取历史行情数据时出错：{e}")
+        # Print exception type and message
+        print(f"Exception type: {type(e).__name__}")
+        print(f"Exception message: {str(e)}")
+        # Print the stack trace
+        traceback.print_exc()
         return pd.DataFrame()
 
 
@@ -543,16 +570,16 @@ def prices_to_df(prices):
 
         # 标准化列名映射
         column_mapping = {
-            '收盘': 'close',
-            '开盘': 'open',
-            '最高': 'high',
-            '最低': 'low',
-            '成交量': 'volume',
-            '成交额': 'amount',
-            '振幅': 'amplitude',
-            '涨跌幅': 'change_percent',
-            '涨跌额': 'change_amount',
-            '换手率': 'turnover_rate'
+            "收盘": "close",
+            "开盘": "open",
+            "最高": "high",
+            "最低": "low",
+            "成交量": "volume",
+            "成交额": "amount",
+            "振幅": "amplitude",
+            "涨跌幅": "change_percent",
+            "涨跌额": "change_amount",
+            "换手率": "turnover_rate",
         }
 
         # 重命名列
@@ -561,7 +588,7 @@ def prices_to_df(prices):
                 df[en] = df[cn]
 
         # 确保必要的列存在
-        required_columns = ['close', 'open', 'high', 'low', 'volume']
+        required_columns = ["close", "open", "high", "low", "volume"]
         for col in required_columns:
             if col not in df.columns:
                 df[col] = 0.0  # 使用0填充缺失的必要列
@@ -570,14 +597,10 @@ def prices_to_df(prices):
     except Exception as e:
         print(f"转换价格数据时出错: {str(e)}")
         # 返回一个包含必要列的空DataFrame
-        return pd.DataFrame(columns=['close', 'open', 'high', 'low', 'volume'])
+        return pd.DataFrame(columns=["close", "open", "high", "low", "volume"])
 
 
-def get_price_data(
-    ticker: str,
-    start_date: str,
-    end_date: str
-) -> pd.DataFrame:
+def get_price_data(ticker: str, start_date: str, end_date: str) -> pd.DataFrame:
     """获取股票价格数据
 
     Args:
