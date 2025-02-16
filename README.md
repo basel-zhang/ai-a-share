@@ -32,40 +32,13 @@
 
 ## Setup
 
-Clone the repository:
-
-```bash
-git clone https://github.com/24mlight/A_Share_investment_Agent.git
-cd A_Share_investment_Agent
-```
-
-1. Install Poetry:
-
-# Windows (PowerShell)
-
-```powershell
-(Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | py -
-```
-
-# Unix/macOS
-
-```bash
-curl -sSL https://install.python-poetry.org | python3 -
-```
-
-2. Install dependencies:
-
-```bash
-poetry install
-```
-
+1. Get your Gemini API key from https://aistudio.google.com/
+2. Get your Tushare token from https://tushare.pro/
 3. Set up your environment variables:
 
 ```bash
 # Create .env file for your API keys
 cp .env.example .env
-
-# Get your Gemini API key from https://aistudio.google.com/
 ```
 
 你可以通过以下两种方式设置环境变量:
@@ -76,6 +49,7 @@ cp .env.example .env
 ```
 GEMINI_API_KEY=your-gemini-api-key-here
 GEMINI_MODEL=gemini-1.5-flash
+TUSHARE_TOKEN=your-tushare-api-key-here
 ```
 
 2. **通过命令行设置**
@@ -85,6 +59,7 @@ Unix/macOS:
 ```bash
 export GEMINI_API_KEY='your-gemini-api-key-here'
 export GEMINI_MODEL='gemini-1.5-flash'
+export TUSHARE_TOKEN='your-tushare-api-key-here'
 ```
 
 Windows PowerShell:
@@ -92,6 +67,7 @@ Windows PowerShell:
 ```powershell
 $env:GEMINI_API_KEY='your-gemini-api-key-here'
 $env:GEMINI_MODEL='gemini-1.5-flash'
+$env:TUSHARE_TOKEN='your-tushare-api-key-here'
 ```
 
 注意: 推荐使用第一种方式(修改 .env 文件)。
@@ -105,7 +81,7 @@ $env:GEMINI_MODEL='gemini-1.5-flash'
 1. **基本运行**
 
 ```bash
-poetry run python src/main.py --ticker 301155
+python -m src.main --ticker 301155
 ```
 
 这将使用默认参数运行系统，包括：
@@ -117,7 +93,7 @@ poetry run python src/main.py --ticker 301155
 2. **显示分析推理过程**
 
 ```bash
-poetry run python src/main.py --ticker 301155 --show-reasoning
+python -m src.main --ticker 301155 --show-reasoning
 ```
 
 这将显示每个智能体（Market Data Agent、Technical Analyst、Fundamentals Agent、Sentiment Agent、Risk Manager、Portfolio Manager）的分析过程和推理结果。
@@ -129,7 +105,7 @@ poetry run python src/main.py --ticker 301155 --show-reasoning
 4. **自定义新闻分析数量和具体日期的投资建议**
 
 ```bash
-poetry run python src/main.py --ticker 301157 --show-reasoning --end-date 2024-12-11 --num-of-news 20
+python -m src.main --ticker 301157 --show-reasoning --end-date 2024-12-11 --num-of-news 20
 ```
 
 这将：
@@ -140,7 +116,7 @@ poetry run python src/main.py --ticker 301157 --show-reasoning --end-date 2024-1
 5. **回测功能**
 
 ```bash
-poetry run python src/backtester.py --ticker 301157 --start-date 2024-12-11 --end-date 2025-01-07 --num-of-news 20
+python -m src.backtester --ticker 301157 --start-date 2024-12-11 --end-date 2025-01-07 --num-of-news 20
 ```
 
 回测功能支持以下参数：
@@ -301,32 +277,6 @@ ai-hedge-fund/
 ## 许可证
 
 本项目基于 MIT 许可证 - 详见 LICENSE 文件。
-
-## ☕️ 请作者喝杯咖啡
-
-如果这个项目对你有帮助，欢迎请我喝杯咖啡 ❤️
-
-<img src="src/data/img/ali.png" alt="支付宝收款码" width="300"/>
-
-### 🌟 加入我们的社区
-=======
-同时也欢迎关注我们的公众号【空指针指向量化 Agent】，获取更多量化投资和 AI 智能交易相关的干货内容！ 🚀
-
-<div style="display: flex; justify-content: space-between;">
-    <div style="text-align: center; margin-right: 20px;">
-        <p>关注公众号【空指针指向了量化 Agent】，获取更多量化投资和 AI 智能交易相关的干货内容！
-        现在关注即可领取 <b>¥20</b> 知识星球优惠券！🎁</p>
-        <img src="src/data/img/gzh_code.jpg" alt="公众号二维码" width="300"/>
-    </div>
-</div>
-
-<div style="text-align: center;">
-        <p>欢迎加入我们的知识星球！这里不仅有更多深度干货，还有：<br/>
-        🔥 独家策略、资料分享<br/>
-        👥 量化投资交流<br/>
-        💡 一对一答疑解惑</p>
-        <img src="src/data/img/planet.jpg" alt="知识星球二维码" width="300"/>
-</div>
 
 ## 项目详细说明
 
@@ -641,4 +591,4 @@ Market Data Analyst → [Technical/Fundamentals/Sentiment/Valuation Analyst] →
 
 ## 致谢
 
-本项目修改自 [ai-hedge-fund](https://github.com/virattt/ai-hedge-fund.git)。我们衷心感谢原作者的出色工作和启发。原项目为我们针对 A 股市场的适配和改进提供了坚实的基础。
+本项目修改自 [A_Share_investment_Agent](https://github.com/24mlight/A_Share_investment_Agent.git)。我们衷心感谢原作者的出色工作和启发。原项目为我们针对 A 股市场的适配和改进提供了坚实的基础。

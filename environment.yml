@@ -1,0 +1,28 @@
+name: ai-a-share
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - pandas
+  - numpy
+  - matplotlib
+  - requests
+  - beautifulsoup4
+  - black
+  - flake8
+  - langchain
+  - langchain-openai
+  - langchain-core
+  - langgraph
+  - python-dotenv
+  - yfinance
+  - openai
+  - google-genai
+  - google-generativeai
+  - backoff
+  - isort
+  - pip:
+    - akshare
+    - tushare
