@@ -33,7 +33,7 @@ def test_simple_prompt():
 
     # 打印完整的响应对象结构
     print("\nFull response structure:")
-    print(json.dumps(response.dict(), indent=2))
+    print(json.dumps(response.model_dump(), indent=2))
 
 
 def test_chat_format():
