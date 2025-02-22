@@ -1,11 +1,10 @@
-from langchain_core.messages import HumanMessage
-from common.openrouter_config import get_chat_completion
+# -*- coding: utf-8 -*-
+
+import pandas as pd
 
 from agent.state import AgentState
 from common.api import get_financial_metrics, get_financial_statements, get_market_data, get_price_history
-
-from datetime import datetime, timedelta
-import pandas as pd
+from common.datetime_util import get_start_end_date
 
 
 def market_data_agent(state: AgentState):
@@ -13,23 +12,7 @@ def market_data_agent(state: AgentState):
     messages = state["messages"]
     data = state["data"]
 
-    # Set default dates
-    current_date = datetime.now()
-    yesterday = current_date - timedelta(days=1)
-    end_date = data["end_date"] or yesterday.strftime('%Y-%m-%d')
-
-    # Ensure end_date is not in the future
-    end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
-    if end_date_obj > yesterday:
-        end_date = yesterday.strftime('%Y-%m-%d')
-        end_date_obj = yesterday
-
-    if not data["start_date"]:
-        # Calculate 1 year before end_date
-        start_date = end_date_obj - timedelta(days=365)  # 默认获取一年的数据
-        start_date = start_date.strftime('%Y-%m-%d')
-    else:
-        start_date = data["start_date"]
+    start_date, end_date = get_start_end_date(state)
 
     # Get all required data
     ticker = data["ticker"]
@@ -38,8 +21,7 @@ def market_data_agent(state: AgentState):
     prices_df = get_price_history(ticker, start_date, end_date)
     if prices_df is None or prices_df.empty:
         print(f"警告：无法获取{ticker}的价格数据，将使用空数据继续")
-        prices_df = pd.DataFrame(
-            columns=['close', 'open', 'high', 'low', 'volume'])
+        prices_df = pd.DataFrame(columns=["close", "open", "high", "low", "volume"])
 
     # 获取财务指标
     try:
@@ -64,11 +46,10 @@ def market_data_agent(state: AgentState):
 
     # 确保数据格式正确
     if not isinstance(prices_df, pd.DataFrame):
-        prices_df = pd.DataFrame(
-            columns=['close', 'open', 'high', 'low', 'volume'])
+        prices_df = pd.DataFrame(columns=["close", "open", "high", "low", "volume"])
 
     # 转换价格数据为字典格式
-    prices_dict = prices_df.to_dict('records')
+    prices_dict = prices_df.to_dict("records")
 
     return {
         "messages": messages,
@@ -81,5 +62,5 @@ def market_data_agent(state: AgentState):
             "financial_line_items": financial_line_items,
             "market_cap": market_data.get("market_cap", 0),
             "market_data": market_data,
-        }
+        },
     }
