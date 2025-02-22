@@ -49,7 +49,7 @@ cp .env.example .env
 ```
 GEMINI_API_KEY=your-gemini-api-key-here
 GEMINI_MODEL=gemini-1.5-flash
-TUSHARE_TOKEN=your-tushare-api-key-here
+TUSHARE_TOKEN=your-tushare-token-here
 ```
 
 2. **通过命令行设置**
@@ -59,7 +59,7 @@ Unix/macOS:
 ```bash
 export GEMINI_API_KEY='your-gemini-api-key-here'
 export GEMINI_MODEL='gemini-1.5-flash'
-export TUSHARE_TOKEN='your-tushare-api-key-here'
+export TUSHARE_TOKEN='your-tushare-token-here'
 ```
 
 Windows PowerShell:
@@ -67,7 +67,7 @@ Windows PowerShell:
 ```powershell
 $env:GEMINI_API_KEY='your-gemini-api-key-here'
 $env:GEMINI_MODEL='gemini-1.5-flash'
-$env:TUSHARE_TOKEN='your-tushare-api-key-here'
+$env:TUSHARE_TOKEN='your-tushare-token-here'
 ```
 
 注意: 推荐使用第一种方式(修改 .env 文件)。
