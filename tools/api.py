@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
 
-from src.tools.my_tushare import get_pro_api, convert_to_tushare_code
+from tools.my_tushare import get_pro_api, convert_to_tushare_code
 
 # Load environment variables from .env file
 load_dotenv()

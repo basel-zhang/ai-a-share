@@ -81,7 +81,7 @@ $env:TUSHARE_TOKEN='your-tushare-token-here'
 1. **基本运行**
 
 ```bash
-python -m src.main --ticker 301155
+python -m main --ticker 301155
 ```
 
 这将使用默认参数运行系统，包括：
@@ -93,7 +93,7 @@ python -m src.main --ticker 301155
 2. **显示分析推理过程**
 
 ```bash
-python -m src.main --ticker 301155 --show-reasoning
+python -m main --ticker 301155 --show-reasoning
 ```
 
 这将显示每个智能体（Market Data Agent、Technical Analyst、Fundamentals Agent、Sentiment Agent、Risk Manager、Portfolio Manager）的分析过程和推理结果。
@@ -105,7 +105,7 @@ python -m src.main --ticker 301155 --show-reasoning
 4. **自定义新闻分析数量和具体日期的投资建议**
 
 ```bash
-python -m src.main --ticker 301157 --show-reasoning --end-date 2024-12-11 --num-of-news 20
+python -m main --ticker 301157 --show-reasoning --end-date 2024-12-11 --num-of-news 20
 ```
 
 这将：
@@ -116,7 +116,7 @@ python -m src.main --ticker 301157 --show-reasoning --end-date 2024-12-11 --num-
 5. **回测功能**
 
 ```bash
-python -m src.backtester --ticker 301157 --start-date 2024-12-11 --end-date 2025-01-07 --num-of-news 20
+python -m backtester --ticker 301157 --start-date 2024-12-11 --end-date 2025-01-07 --num-of-news 20
 ```
 
 回测功能支持以下参数：
@@ -584,11 +584,3 @@ Market Data Analyst → [Technical/Fundamentals/Sentiment/Valuation Analyst] →
 - **-0.1 到 -0.4**: 轻微消极（小额诉讼、非核心业务亏损）
 - **-0.5 到 -0.9**: 消极（业绩下滑、重要客户流失、行业政策收紧）
 - **-1.0**: 极其消极（重大违规、核心业务严重亏损、被监管处罚）
-
-# 结果展示
-
-![image](src/data/img/image.png)
-
-## 致谢
-
-本项目修改自 [A_Share_investment_Agent](https://github.com/24mlight/A_Share_investment_Agent.git)。我们衷心感谢原作者的出色工作和启发。原项目为我们针对 A 股市场的适配和改进提供了坚实的基础。

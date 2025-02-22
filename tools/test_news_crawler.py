@@ -20,7 +20,7 @@ def test_news_crawler():
     print(f"项目根目录: {project_root}")
 
     # 检查数据目录
-    news_dir = os.path.join(project_root, "src", "data", "stock_news")
+    news_dir = os.path.join(project_root, "data", "stock_news")
     print(f"新闻存储目录: {news_dir}")
 
     if not os.path.exists(news_dir):
