@@ -23,6 +23,7 @@ dependencies:
   - google-generativeai
   - backoff
   - isort
+  - pytest
   - pip:
     - akshare
     - tushare

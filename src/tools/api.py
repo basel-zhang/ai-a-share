@@ -7,20 +7,14 @@ from typing import Any, Dict, List
 import akshare as ak
 import numpy as np
 import pandas as pd
-import tushare as ts
 from dotenv import load_dotenv
+
+from src.tools.my_tushare import get_pro_api, convert_to_tushare_code
 
 # Load environment variables from .env file
 load_dotenv()
 
-# Get Tushare token from environment variables
-TUSHARE_TOKEN = os.getenv("TUSHARE_TOKEN")
-if not TUSHARE_TOKEN:
-    raise ValueError("Tushare token not found in .env file. Please add TUSHARE_TOKEN=your_token")
-
-# Initialize tushare with token from .env
-ts.set_token(TUSHARE_TOKEN)
-pro = ts.pro_api()
+pro = get_pro_api()
 
 
 def get_financial_metrics(symbol: str) -> Dict[str, Any]:
@@ -305,32 +299,13 @@ def get_market_data(symbol: str) -> Dict[str, Any]:
         return {}
 
 
-# Convert regular stock code to tushare format
-def convert_to_tushare_code(code: str) -> str:
-    """Convert regular stock code to tushare format."""
-    # Remove any existing suffixes
-    code = code.split(".")[0]
-
-    # Add appropriate suffix
-    if code.startswith("6"):
-        return f"{code}.SH"
-    elif code.startswith(("0", "3")):
-        return f"{code}.SZ"
-    else:
-        raise ValueError(f"Unsupported stock code format: {code}")
-
-
-def get_price_history(symbol: str, start_date: str = None, end_date: str = None, adjust: str = "qfq") -> pd.DataFrame:
+def get_price_history(symbol: str, start_date: str = None, end_date: str = None) -> pd.DataFrame:
     """获取历史价格数据
 
     Args:
         symbol: 股票代码
         start_date: 开始日期，格式：YYYY-MM-DD，如果为None则默认获取过去一年的数据
         end_date: 结束日期，格式：YYYY-MM-DD，如果为None则使用昨天作为结束日期
-        adjust: 复权类型，可选值：
-               - "": 不复权
-               - "qfq": 前复权（默认）
-               - "hfq": 后复权
 
     Returns:
         包含以下列的DataFrame：
