@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import argparse
 from datetime import datetime, timedelta
 
@@ -12,10 +13,16 @@ from agents.sentiment import sentiment_agent
 from agents.state import AgentState
 from agents.technicals import technical_analyst_agent
 from agents.valuation import valuation_agent
+from dotenv import load_dotenv
+from tools.my_logging import get_logger
+
+_log = get_logger(__name__)
+
+load_dotenv()
 
 
-def run_hedge_fund(
-        ticker: str, start_date: str, end_date: str, portfolio: dict, show_reasoning: bool = False, num_of_news: int = 5
+def run_a_share(
+    ticker: str, start_date: str, end_date: str, portfolio: dict, show_reasoning: bool = False, num_of_news: int = 5
 ):
     final_state = app.invoke(
         {
@@ -107,7 +114,7 @@ if __name__ == "__main__":
     # Configure portfolio
     portfolio = {"cash": args.initial_capital, "stock": args.initial_position}
 
-    result = run_hedge_fund(
+    result = run_a_share(
         ticker=args.ticker,
         start_date=start_date.strftime("%Y-%m-%d"),
         end_date=end_date.strftime("%Y-%m-%d"),
@@ -115,5 +122,4 @@ if __name__ == "__main__":
         show_reasoning=args.show_reasoning,
         num_of_news=args.num_of_news,
     )
-    print("\nFinal Result:")
-    print(result)
+    _log.info(f"\nFinal Result:\n{result}")

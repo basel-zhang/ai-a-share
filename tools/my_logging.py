@@ -8,6 +8,9 @@ import tools.string_util as su
 
 CFG_DEBUG = "DEBUG"
 
+# Get the project root directory. It is the parent of the current file.
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 DEFAULT_CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -24,7 +27,7 @@ DEFAULT_CONFIG = {
             "level": "DEBUG",
             "formatter": "standard",
             "class": "logging.handlers.TimedRotatingFileHandler",
-            "filename": "log/app.default.log",
+            "filename": os.path.join(PROJECT_ROOT, "log", "app.default.log"),
             "when": "D",
             "encoding": "utf-8",
         },
@@ -32,7 +35,7 @@ DEFAULT_CONFIG = {
             "level": "ERROR",
             "formatter": "standard",
             "class": "logging.handlers.TimedRotatingFileHandler",
-            "filename": "log/app.error.log",
+            "filename": os.path.join(PROJECT_ROOT, "log", "app.error.log"),
             "when": "D",
             "encoding": "utf-8",
         },
@@ -72,13 +75,17 @@ def log_entry_exit(func):
 
 
 def get_logger(name=None):
+    # Create log directory if missing
+    os.makedirs(os.path.join(PROJECT_ROOT, "log"), exist_ok=True)
+
+    # Configure logging
     logging.config.dictConfig(DEFAULT_CONFIG)
 
     # Determine the logger to use
     logger = logging.getLogger(name)
 
     # Determine the log level
-    log_level = logging.DEBUG if os.environ.get("DEBUG") == "True" else logging.INFO
+    log_level = logging.DEBUG if os.environ.get("DEBUG") == "true" else logging.INFO
 
     # Set the log level
     logger.setLevel(log_level)

@@ -5,24 +5,24 @@ import logging
 import matplotlib.pyplot as plt
 import pandas as pd
 from tools.api import get_price_data
-from main import run_hedge_fund
+from main import run_a_share
 import sys
 import matplotlib
 import os
 
 # 根据操作系统配置中文字体
-if sys.platform.startswith('win'):
+if sys.platform.startswith("win"):
     # Windows系统
-    matplotlib.rc('font', family='Microsoft YaHei')
-elif sys.platform.startswith('linux'):
+    matplotlib.rc("font", family="Microsoft YaHei")
+elif sys.platform.startswith("linux"):
     # Linux系统
-    matplotlib.rc('font', family='WenQuanYi Micro Hei')
+    matplotlib.rc("font", family="WenQuanYi Micro Hei")
 else:
     # macOS系统
-    matplotlib.rc('font', family='PingFang SC')
+    matplotlib.rc("font", family="PingFang SC")
 
 # 用来正常显示负号
-matplotlib.rcParams['axes.unicode_minus'] = False
+matplotlib.rcParams["axes.unicode_minus"] = False
 
 
 class Backtester:
@@ -49,12 +49,11 @@ class Backtester:
 
     def setup_logging(self):
         """设置日志记录器"""
-        logger = logging.getLogger('backtester')
+        logger = logging.getLogger("backtester")
         logger.setLevel(logging.INFO)
         if not logger.handlers:
             handler = logging.StreamHandler()
-            formatter = logging.Formatter(
-                '%(asctime)s - %(levelname)s - %(message)s')
+            formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
             handler.setFormatter(formatter)
             logger.addHandler(handler)
         return logger
@@ -114,46 +113,38 @@ class Backtester:
                     start_date=lookback_start,
                     end_date=current_date,
                     portfolio=portfolio,
-                    num_of_news=self.num_of_news
+                    num_of_news=self.num_of_news,
                 )
 
                 try:
                     # 尝试解析返回的字符串为 JSON
                     if isinstance(result, str):
                         # 清理可能的markdown标记
-                        result = result.replace(
-                            '```json\n', '').replace('\n```', '').strip()
+                        result = result.replace("```json\n", "").replace("\n```", "").strip()
                         print(f"---------------result------------\n: {result}")
                         parsed_result = json.loads(result)
 
                         # 构建标准格式的结果
-                        formatted_result = {
-                            "decision": parsed_result,  # 保持原始决策结构
-                            "analyst_signals": {}
-                        }
+                        formatted_result = {"decision": parsed_result, "analyst_signals": {}}  # 保持原始决策结构
 
                         # 处理智能体信号
                         if "agent_signals" in parsed_result:
                             formatted_result["analyst_signals"] = {
                                 signal["agent"]: {
                                     "signal": signal.get("signal", "unknown"),
-                                    "confidence": signal.get("confidence", 0)
+                                    "confidence": signal.get("confidence", 0),
                                 }
                                 for signal in parsed_result["agent_signals"]
                             }
 
-                        self.logger.info(
-                            f"解析后的决策: {formatted_result['decision']}")  # 添加日志
+                        self.logger.info(f"解析后的决策: {formatted_result['decision']}")  # 添加日志
                         return formatted_result
                     return result
                 except json.JSONDecodeError as e:
                     # 如果无法解析为 JSON，记录错误并返回默认决策
                     self.logger.warning(f"JSON解析错误: {str(e)}")
                     self.logger.warning(f"原始返回结果: {result}")
-                    return {
-                        "decision": {"action": "hold", "quantity": 0},
-                        "analyst_signals": {}
-                    }
+                    return {"decision": {"action": "hold", "quantity": 0}, "analyst_signals": {}}
 
             except Exception as e:
                 if "AFC is enabled" in str(e):
@@ -163,11 +154,10 @@ class Backtester:
                     self._api_window_start = time.time()
                     continue
 
-                self.logger.warning(
-                    f"获取智能体决策失败 (尝试 {attempt + 1}/{max_retries}): {str(e)}")
+                self.logger.warning(f"获取智能体决策失败 (尝试 {attempt + 1}/{max_retries}): {str(e)}")
                 if attempt == max_retries - 1:
                     return {"decision": {"action": "hold", "quantity": 0}, "analyst_signals": {}}
-                time.sleep(2 ** attempt)
+                time.sleep(2**attempt)
 
     def parse_decision_from_text(self, text):
         """从文本中解析交易决策"""
@@ -214,12 +204,11 @@ class Backtester:
     def setup_backtest_logging(self):
         """设置回测日志"""
         # 创建日志目录
-        log_dir = os.path.join(os.path.dirname(
-            os.path.abspath(__file__)), '..', 'logs')
+        log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "logs")
         os.makedirs(log_dir, exist_ok=True)
 
         # 创建回测日志记录器
-        self.backtest_logger = logging.getLogger('backtest')
+        self.backtest_logger = logging.getLogger("backtest")
         self.backtest_logger.setLevel(logging.INFO)
 
         # 清除已存在的处理器
@@ -227,23 +216,21 @@ class Backtester:
             self.backtest_logger.handlers.clear()
 
         # 设置文件处理器
-        current_date = datetime.now().strftime('%Y%m%d')
+        current_date = datetime.now().strftime("%Y%m%d")
         backtest_period = f"{self.start_date.replace('-', '')}_{self.end_date.replace('-', '')}"
-        log_file = os.path.join(
-            log_dir, f"backtest_{self.ticker}_{current_date}_{backtest_period}.log")
-        file_handler = logging.FileHandler(log_file, encoding='utf-8')
+        log_file = os.path.join(log_dir, f"backtest_{self.ticker}_{current_date}_{backtest_period}.log")
+        file_handler = logging.FileHandler(log_file, encoding="utf-8")
         file_handler.setLevel(logging.INFO)
 
         # 设置日志格式
-        formatter = logging.Formatter('%(message)s')  # 简化格式，只显示消息
+        formatter = logging.Formatter("%(message)s")  # 简化格式，只显示消息
         file_handler.setFormatter(formatter)
 
         # 添加处理器
         self.backtest_logger.addHandler(file_handler)
 
         # 写入回测初始信息
-        self.backtest_logger.info(
-            f"回测开始时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        self.backtest_logger.info(f"回测开始时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         self.backtest_logger.info(f"股票代码: {self.ticker}")
         self.backtest_logger.info(f"回测区间: {self.start_date} 至 {self.end_date}")
         self.backtest_logger.info(f"初始资金: {self.initial_capital:,.2f}\n")
@@ -254,17 +241,17 @@ class Backtester:
         dates = pd.date_range(self.start_date, self.end_date, freq="B")
 
         self.logger.info("\n开始回测...")
-        print(f"{'日期':<12} {'代码':<6} {'操作':<6} {'数量':>8} {'价格':>8} {'现金':>12} {'持仓':>8} {'总值':>12} {'看多':>8} {'看空':>8} {'中性':>8}")
+        print(
+            f"{'日期':<12} {'代码':<6} {'操作':<6} {'数量':>8} {'价格':>8} {'现金':>12} {'持仓':>8} {'总值':>12} {'看多':>8} {'看空':>8} {'中性':>8}"
+        )
         print("-" * 110)
 
         for current_date in dates:
-            lookback_start = (current_date - timedelta(days=30)
-                              ).strftime("%Y-%m-%d")
+            lookback_start = (current_date - timedelta(days=30)).strftime("%Y-%m-%d")
             current_date_str = current_date.strftime("%Y-%m-%d")
 
             # 获取智能体决策
-            output = self.get_agent_decision(
-                current_date_str, lookback_start, self.portfolio)
+            output = self.get_agent_decision(current_date_str, lookback_start, self.portfolio)
 
             # 记录每个智能体的信号和分析结果
             self.backtest_logger.info(f"\n交易日期: {current_date_str}")
@@ -275,14 +262,14 @@ class Backtester:
 
                     # 记录信号和置信度
                     signal_str = f"- 信号: {signal.get('signal', 'unknown')}"
-                    if 'confidence' in signal:
+                    if "confidence" in signal:
                         signal_str += f", 置信度: {signal.get('confidence', 0)*100:.0f}%"
                     self.backtest_logger.info(signal_str)
 
                     # 记录分析结果
-                    if 'analysis' in signal:
+                    if "analysis" in signal:
                         self.backtest_logger.info("- 分析结果:")
-                        analysis = signal['analysis']
+                        analysis = signal["analysis"]
                         if isinstance(analysis, dict):
                             for key, value in analysis.items():
                                 self.backtest_logger.info(f"  {key}: {value}")
@@ -293,9 +280,9 @@ class Backtester:
                             self.backtest_logger.info(f"  {analysis}")
 
                     # 记录理由
-                    if 'reason' in signal:
+                    if "reason" in signal:
                         self.backtest_logger.info("- 决策理由:")
-                        reason = signal['reason']
+                        reason = signal["reason"]
                         if isinstance(reason, list):
                             for item in reason:
                                 self.backtest_logger.info(f"  • {item}")
@@ -304,15 +291,13 @@ class Backtester:
 
                     # 记录其他可能的指标
                     for key, value in signal.items():
-                        if key not in ['signal', 'confidence', 'analysis', 'reason']:
+                        if key not in ["signal", "confidence", "analysis", "reason"]:
                             self.backtest_logger.info(f"- {key}: {value}")
 
                 self.backtest_logger.info("\n综合决策:")
 
-            agent_decision = output.get(
-                "decision", {"action": "hold", "quantity": 0})
-            action, quantity = agent_decision.get(
-                "action", "hold"), agent_decision.get("quantity", 0)
+            agent_decision = output.get("decision", {"action": "hold", "quantity": 0})
+            action, quantity = agent_decision.get("action", "hold"), agent_decision.get("quantity", 0)
 
             # 记录决策详情
             self.backtest_logger.info(f"行动: {action.upper()}")
@@ -325,76 +310,59 @@ class Backtester:
             if df is None or df.empty:
                 continue
 
-            current_price = df.iloc[-1]['open']
-            executed_quantity = self.execute_trade(
-                action, quantity, current_price)
+            current_price = df.iloc[-1]["open"]
+            executed_quantity = self.execute_trade(action, quantity, current_price)
 
             # 更新组合总值
-            total_value = self.portfolio["cash"] + \
-                self.portfolio["stock"] * current_price
+            total_value = self.portfolio["cash"] + self.portfolio["stock"] * current_price
             self.portfolio["portfolio_value"] = total_value
 
             # 计算当日收益率
             if len(self.portfolio_values) > 0:
-                daily_return = (
-                    total_value / self.portfolio_values[-1]["Portfolio Value"] - 1) * 100
+                daily_return = (total_value / self.portfolio_values[-1]["Portfolio Value"] - 1) * 100
             else:
                 daily_return = 0
 
             # 记录组合价值和收益率
-            self.portfolio_values.append({
-                "Date": current_date,
-                "Portfolio Value": total_value,
-                "Daily Return": daily_return
-            })
+            self.portfolio_values.append(
+                {"Date": current_date, "Portfolio Value": total_value, "Daily Return": daily_return}
+            )
 
     def analyze_performance(self):
         """分析回测性能"""
         performance_df = pd.DataFrame(self.portfolio_values).set_index("Date")
 
         # 计算累计收益率
-        performance_df["Cumulative Return"] = (
-            performance_df["Portfolio Value"] / self.initial_capital - 1) * 100
+        performance_df["Cumulative Return"] = (performance_df["Portfolio Value"] / self.initial_capital - 1) * 100
 
         # 将金额转换为千元
         performance_df["Portfolio Value (K)"] = performance_df["Portfolio Value"] / 1000
 
         # 创建两个子图
-        fig, (ax1, ax2) = plt.subplots(
-            2, 1, figsize=(12, 10), height_ratios=[1, 1])
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10), height_ratios=[1, 1])
         fig.suptitle("回测结果分析", fontsize=12)
 
         # 绘制资金变化图
-        line1 = ax1.plot(performance_df.index,
-                         performance_df["Portfolio Value (K)"], label="组合价值", marker='o')
+        line1 = ax1.plot(performance_df.index, performance_df["Portfolio Value (K)"], label="组合价值", marker="o")
         ax1.set_ylabel("组合价值 (千元)")
         ax1.set_title("组合价值变化")
         ax1.grid(True)
 
         # 在数据点上添加标签
         for x, y in zip(performance_df.index, performance_df["Portfolio Value (K)"]):
-            ax1.annotate(f'{y:.1f}K',
-                         (x, y),
-                         textcoords="offset points",
-                         xytext=(0, 10),
-                         ha='center',
-                         fontsize=8)
+            ax1.annotate(f"{y:.1f}K", (x, y), textcoords="offset points", xytext=(0, 10), ha="center", fontsize=8)
 
         # 绘制收益率变化图
-        line2 = ax2.plot(performance_df.index,
-                         performance_df["Cumulative Return"], label="累计收益率", color='green', marker='o')
+        line2 = ax2.plot(
+            performance_df.index, performance_df["Cumulative Return"], label="累计收益率", color="green", marker="o"
+        )
         ax2.set_ylabel("累计收益率 (%)")
         ax2.set_title("累计收益率变化")
         ax2.grid(True)
 
         # 在数据点上添加标签
         for x, y in zip(performance_df.index, performance_df["Cumulative Return"]):
-            ax2.annotate(f'{y:.2f}%',
-                         (x, y),
-                         textcoords="offset points",
-                         xytext=(0, 10),
-                         ha='center',
-                         fontsize=8)
+            ax2.annotate(f"{y:.2f}%", (x, y), textcoords="offset points", xytext=(0, 10), ha="center", fontsize=8)
 
         # 设置x轴标签
         plt.xlabel("日期")
@@ -406,8 +374,7 @@ class Backtester:
         plt.show()
 
         # 计算和打印性能指标
-        total_return = (
-            self.portfolio["portfolio_value"] - self.initial_capital) / self.initial_capital
+        total_return = (self.portfolio["portfolio_value"] - self.initial_capital) / self.initial_capital
         print(f"\n总收益率: {total_return * 100:.2f}%")
 
         # 记录最终回测结果
@@ -415,16 +382,14 @@ class Backtester:
         self.backtest_logger.info("回测结果汇总")
         self.backtest_logger.info("=" * 50)
         self.backtest_logger.info(f"初始资金: {self.initial_capital:,.2f}")
-        self.backtest_logger.info(
-            f"最终总值: {self.portfolio['portfolio_value']:,.2f}")
+        self.backtest_logger.info(f"最终总值: {self.portfolio['portfolio_value']:,.2f}")
         self.backtest_logger.info(f"总收益率: {total_return * 100:.2f}%")
 
         # 计算夏普比率
         daily_returns = performance_df["Daily Return"] / 100  # 转换为小数
         mean_daily_return = daily_returns.mean()
         std_daily_return = daily_returns.std()
-        sharpe_ratio = (mean_daily_return / std_daily_return) * \
-            (252 ** 0.5) if std_daily_return != 0 else 0
+        sharpe_ratio = (mean_daily_return / std_daily_return) * (252**0.5) if std_daily_return != 0 else 0
         # print(f"夏普比率: {sharpe_ratio:.2f}")
         self.backtest_logger.info(f"夏普比率: {sharpe_ratio:.2f}")
 
@@ -442,28 +407,32 @@ if __name__ == "__main__":
     import argparse
 
     # 设置命令行参数解析
-    parser = argparse.ArgumentParser(description='运行回测模拟')
-    parser.add_argument('--ticker', type=str, required=True,
-                        help='股票代码 (例如: 600519)')
-    parser.add_argument('--end-date', type=str,
-                        default=datetime.now().strftime('%Y-%m-%d'), help='结束日期，格式：YYYY-MM-DD')
-    parser.add_argument('--start-date', type=str, default=(datetime.now() -
-                        timedelta(days=90)).strftime('%Y-%m-%d'), help='开始日期，格式：YYYY-MM-DD')
-    parser.add_argument('--initial-capital', type=float,
-                        default=100000, help='初始资金 (默认: 100000)')
-    parser.add_argument('--num-of-news', type=int, default=5,
-                        help='Number of news articles to analyze for sentiment (default: 5)')
+    parser = argparse.ArgumentParser(description="运行回测模拟")
+    parser.add_argument("--ticker", type=str, required=True, help="股票代码 (例如: 600519)")
+    parser.add_argument(
+        "--end-date", type=str, default=datetime.now().strftime("%Y-%m-%d"), help="结束日期，格式：YYYY-MM-DD"
+    )
+    parser.add_argument(
+        "--start-date",
+        type=str,
+        default=(datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d"),
+        help="开始日期，格式：YYYY-MM-DD",
+    )
+    parser.add_argument("--initial-capital", type=float, default=100000, help="初始资金 (默认: 100000)")
+    parser.add_argument(
+        "--num-of-news", type=int, default=5, help="Number of news articles to analyze for sentiment (default: 5)"
+    )
 
     args = parser.parse_args()
 
     # 创建回测器实例
     backtester = Backtester(
-        agent=run_hedge_fund,
+        agent=run_a_share,
         ticker=args.ticker,
         start_date=args.start_date,
         end_date=args.end_date,
         initial_capital=args.initial_capital,
-        num_of_news=args.num_of_news
+        num_of_news=args.num_of_news,
     )
 
     # 运行回测
