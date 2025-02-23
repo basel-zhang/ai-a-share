@@ -3,7 +3,7 @@ import pytest
 from unittest.mock import patch, mock_open
 import os
 from dotenv import load_dotenv
-from common.my_tushare import get_pro_api, convert_to_tushare_code
+from utils.my_tushare import get_pro_api, convert_to_tushare_code
 
 # Test data
 TEST_TOKEN = "test_token_12345"

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timedelta
 
-from agent.state import AgentState
+from agents.state import AgentState
 
 
 def get_start_end_date(state: AgentState) -> tuple[str, str]:

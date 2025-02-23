@@ -4,7 +4,7 @@ import functools
 import logging.config
 import os
 
-import common.string_util as su
+import utils.string_util as su
 
 CFG_DEBUG = "DEBUG"
 

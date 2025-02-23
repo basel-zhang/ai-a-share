@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timedelta
 
-from common.datetime_util import get_start_end_date
+from utils.datetime_util import get_start_end_date
 
 
 def test_get_start_end_date_with_both_dates_provided():
