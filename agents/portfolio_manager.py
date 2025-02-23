@@ -1,8 +1,14 @@
-from langchain_core.messages import HumanMessage
-from utils.openrouter_config import get_chat_completion
+# -*- coding: utf-8 -*-
+
 import json
 
+from langchain_core.messages import HumanMessage
+
 from graph.state import AgentState, show_agent_reasoning
+from utils.my_logging import get_logger
+from utils.openrouter_config import get_chat_completion
+
+_log = get_logger(__name__)
 
 
 ##### Portfolio Management Agent #####
@@ -12,16 +18,11 @@ def portfolio_management_agent(state: AgentState):
     portfolio = state["data"]["portfolio"]
 
     # Get the technical analyst, fundamentals agent, and risk management agent messages
-    technical_message = next(
-        msg for msg in state["messages"] if msg.name == "technical_analyst_agent")
-    fundamentals_message = next(
-        msg for msg in state["messages"] if msg.name == "fundamentals_agent")
-    sentiment_message = next(
-        msg for msg in state["messages"] if msg.name == "sentiment_agent")
-    valuation_message = next(
-        msg for msg in state["messages"] if msg.name == "valuation_agent")
-    risk_message = next(
-        msg for msg in state["messages"] if msg.name == "risk_management_agent")
+    technical_message = next(msg for msg in state["messages"] if msg.name == "technical_analyst_agent")
+    fundamentals_message = next(msg for msg in state["messages"] if msg.name == "fundamentals_agent")
+    sentiment_message = next(msg for msg in state["messages"] if msg.name == "sentiment_agent")
+    valuation_message = next(msg for msg in state["messages"] if msg.name == "valuation_agent")
+    risk_message = next(msg for msg in state["messages"] if msg.name == "risk_management_agent")
 
     # Create the system message
     system_message = {
@@ -39,26 +40,26 @@ def portfolio_management_agent(state: AgentState):
             1. Valuation Analysis (35% weight)
                - Primary driver of fair value assessment
                - Determines if price offers good entry/exit point
-            
+
             2. Fundamental Analysis (30% weight)
                - Business quality and growth assessment
                - Determines conviction in long-term potential
-            
+
             3. Technical Analysis (25% weight)
                - Secondary confirmation
                - Helps with entry/exit timing
-            
+
             4. Sentiment Analysis (10% weight)
                - Final consideration
                - Can influence sizing within risk limits
-            
+
             The decision process should be:
             1. First check risk management constraints
             2. Then evaluate valuation signal
             3. Then evaluate fundamentals signal
             4. Use technical analysis for timing
             5. Consider sentiment for final adjustment
-            
+
             Provide the following in your output:
             - "action": "buy" | "sell" | "hold",
             - "quantity": <positive integer>
@@ -71,7 +72,7 @@ def portfolio_management_agent(state: AgentState):
             - Only buy if you have available cash
             - Only sell if you have shares to sell
             - Quantity must be ≤ current position for sells
-            - Quantity must be ≤ max_position_size from risk management"""
+            - Quantity must be ≤ max_position_size from risk management""",
     }
 
     # Create the user message
@@ -94,7 +95,7 @@ def portfolio_management_agent(state: AgentState):
 
             Remember, the action must be either buy, sell, or hold.
             You can only buy if you have available cash.
-            You can only sell if you have shares in the portfolio to sell."""
+            You can only sell if you have shares in the portfolio to sell.""",
     }
 
     # Get the completion from OpenRouter
@@ -102,39 +103,21 @@ def portfolio_management_agent(state: AgentState):
 
     # 如果API调用失败，使用默认的保守决策
     if result is None:
-        result = json.dumps({
-            "action": "hold",
-            "quantity": 0,
-            "confidence": 0.7,
-            "agent_signals": [
-                {
-                    "agent_name": "technical_analysis",
-                    "signal": "neutral",
-                    "confidence": 0.0
-                },
-                {
-                    "agent_name": "fundamental_analysis",
-                    "signal": "bullish",
-                    "confidence": 1.0
-                },
-                {
-                    "agent_name": "sentiment_analysis",
-                    "signal": "bullish",
-                    "confidence": 0.6
-                },
-                {
-                    "agent_name": "valuation_analysis",
-                    "signal": "bearish",
-                    "confidence": 0.67
-                },
-                {
-                    "agent_name": "risk_management",
-                    "signal": "hold",
-                    "confidence": 1.0
-                }
-            ],
-            "reasoning": "API error occurred. Following risk management signal to hold. This is a conservative decision based on the mixed signals: bullish fundamentals and sentiment vs bearish valuation, with neutral technicals."
-        })
+        result = json.dumps(
+            {
+                "action": "hold",
+                "quantity": 0,
+                "confidence": 0.7,
+                "agent_signals": [
+                    {"agent_name": "technical_analysis", "signal": "neutral", "confidence": 0.0},
+                    {"agent_name": "fundamental_analysis", "signal": "bullish", "confidence": 1.0},
+                    {"agent_name": "sentiment_analysis", "signal": "bullish", "confidence": 0.6},
+                    {"agent_name": "valuation_analysis", "signal": "bearish", "confidence": 0.67},
+                    {"agent_name": "risk_management", "signal": "hold", "confidence": 1.0},
+                ],
+                "reasoning": "API error occurred. Following risk management signal to hold. This is a conservative decision based on the mixed signals: bullish fundamentals and sentiment vs bearish valuation, with neutral technicals.",
+            }
+        )
 
     # Create the portfolio management message
     message = HumanMessage(
@@ -146,10 +129,13 @@ def portfolio_management_agent(state: AgentState):
     if show_reasoning:
         show_agent_reasoning(message.content, "Portfolio Management Agent")
 
+    _log.debug(f"message.content: {message.content}")
+    _log.debug(f"state['messages'][-1].content: {state['messages'][-1].content}")
+
     return {
         "messages": state["messages"] + [message],
-        "data":state["data"],
-        }
+        "data": state["data"],
+    }
 
 
 def format_decision(action: str, quantity: int, confidence: float, agent_signals: list, reasoning: str) -> dict:
@@ -158,15 +144,12 @@ def format_decision(action: str, quantity: int, confidence: float, agent_signals
 
     # 获取各个agent的信号
     fundamental_signal = next(
-        (signal for signal in agent_signals if signal["agent_name"] == "fundamental_analysis"), None)
-    valuation_signal = next(
-        (signal for signal in agent_signals if signal["agent_name"] == "valuation_analysis"), None)
-    technical_signal = next(
-        (signal for signal in agent_signals if signal["agent_name"] == "technical_analysis"), None)
-    sentiment_signal = next(
-        (signal for signal in agent_signals if signal["agent_name"] == "sentiment_analysis"), None)
-    risk_signal = next(
-        (signal for signal in agent_signals if signal["agent_name"] == "risk_management"), None)
+        (signal for signal in agent_signals if signal["agent_name"] == "fundamental_analysis"), None
+    )
+    valuation_signal = next((signal for signal in agent_signals if signal["agent_name"] == "valuation_analysis"), None)
+    technical_signal = next((signal for signal in agent_signals if signal["agent_name"] == "technical_analysis"), None)
+    sentiment_signal = next((signal for signal in agent_signals if signal["agent_name"] == "sentiment_analysis"), None)
+    risk_signal = next((signal for signal in agent_signals if signal["agent_name"] == "risk_management"), None)
 
     # 转换信号为中文
     def signal_to_chinese(signal):
@@ -189,7 +172,7 @@ def format_decision(action: str, quantity: int, confidence: float, agent_signals
 1. 基本面分析 (权重30%):
    信号: {signal_to_chinese(fundamental_signal)}
    置信度: {fundamental_signal['confidence']*100:.0f}%
-   要点: 
+   要点:
    - 盈利能力: {fundamental_signal.get('reasoning', {}).get('profitability_signal', {}).get('details', '无数据')}
    - 增长情况: {fundamental_signal.get('reasoning', {}).get('growth_signal', {}).get('details', '无数据')}
    - 财务健康: {fundamental_signal.get('reasoning', {}).get('financial_health_signal', {}).get('details', '无数据')}
@@ -208,7 +191,7 @@ def format_decision(action: str, quantity: int, confidence: float, agent_signals
    要点:
    - 趋势跟踪: ADX={technical_signal.get('strategy_signals', {}).get('trend_following', {}).get('metrics', {}).get('adx', '无数据'):.2f}
    - 均值回归: RSI(14)={technical_signal.get('strategy_signals', {}).get('mean_reversion', {}).get('metrics', {}).get('rsi_14', '无数据'):.2f}
-   - 动量指标: 
+   - 动量指标:
      * 1月动量={technical_signal.get('strategy_signals', {}).get('momentum', {}).get('metrics', {}).get('momentum_1m', '无数据'):.2%}
      * 3月动量={technical_signal.get('strategy_signals', {}).get('momentum', {}).get('metrics', {}).get('momentum_3m', '无数据'):.2%}
      * 6月动量={technical_signal.get('strategy_signals', {}).get('momentum', {}).get('metrics', {}).get('momentum_6m', '无数据'):.2%}
@@ -242,5 +225,5 @@ def format_decision(action: str, quantity: int, confidence: float, agent_signals
         "quantity": quantity,
         "confidence": confidence,
         "agent_signals": agent_signals,
-        "分析报告": detailed_analysis
+        "分析报告": detailed_analysis,
     }

@@ -7,12 +7,21 @@ import math
 from langchain_core.messages import HumanMessage
 
 from graph.state import AgentState, show_agent_reasoning
+from utils.my_logging import get_logger
+
+_log = get_logger(__name__)
+
 
 ##### Risk Management Agent #####
 
 
 def risk_management_agent(state: AgentState):
     """Evaluates portfolio risk and sets position limits based on comprehensive risk analysis."""
+
+    _log.debug(f"Received {len(state['messages'])} messages")
+    for msg in state["messages"]:
+        _log.debug(f"Message from {msg.name}: {msg.content}")
+
     show_reasoning = state["metadata"]["show_reasoning"]
     portfolio = state["data"]["portfolio"]
     data = state["data"]
@@ -179,6 +188,9 @@ def risk_management_agent(state: AgentState):
 
     if show_reasoning:
         show_agent_reasoning(message_content, "Risk Management Agent")
+
+    _log.debug(f"message.content: {message.content}")
+    _log.debug(f"state['messages'][-1].content: {state['messages'][-1].content}")
 
     return {
         "messages": state["messages"] + [message],

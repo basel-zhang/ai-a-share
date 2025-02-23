@@ -11,7 +11,13 @@ _log = get_logger(__name__)
 
 def market_data_agent(state: AgentState):
     """Responsible for gathering and preprocessing market data"""
+
     messages = state["messages"]
+
+    _log.debug(f"Received {len(messages)} messages")
+    for msg in messages:
+        _log.debug(f"Message from {msg.name}: {msg.content}")
+
     data = state["data"]
 
     # Get all required data
@@ -54,9 +60,8 @@ def market_data_agent(state: AgentState):
     _log.debug(f"messages[-1].content: {messages[-1].content}")
 
     return {
-        "messages": messages,
+        "messages": [],
         "data": {
-            **data,
             "prices": prices_df,
             "financial_metrics": financial_metrics,
             "financial_line_items": financial_line_items,
