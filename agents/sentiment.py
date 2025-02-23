@@ -6,16 +6,19 @@ from datetime import datetime, timedelta
 from langchain_core.messages import HumanMessage
 
 from graph.state import AgentState, show_agent_reasoning
+from utils.my_logging import get_logger
 from utils.news_crawler import get_news_sentiment, get_stock_news
+
+_log = get_logger(__name__)
 
 
 def sentiment_agent(state: AgentState):
     """分析市场情绪并生成交易信号"""
-    print(f"----------state-----------: {state}")
+    _log.info(f"----------state-----------: {state}")
     show_reasoning = state["metadata"]["show_reasoning"]
     data = state["data"]
     ticker = data["ticker"]
-    print(f"----------symbol-----------: {ticker}")
+    _log.info(f"----------ticker-----------: {ticker}")
     # 从命令行参数获取新闻数量，默认为5条
     num_of_news = data.get("num_of_news", 5)
 
