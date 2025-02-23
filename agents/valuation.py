@@ -1,6 +1,10 @@
-from langchain_core.messages import HumanMessage
-from graph.state import AgentState, show_agent_reasoning
+# -*- coding: utf-8 -*-
+
 import json
+
+from langchain_core.messages import HumanMessage
+
+from graph.state import AgentState, show_agent_reasoning
 
 
 def valuation_agent(state: AgentState):
@@ -15,24 +19,24 @@ def valuation_agent(state: AgentState):
     reasoning = {}
 
     # Calculate working capital change
-    working_capital_change = (current_financial_line_item.get(
-        'working_capital') or 0) - (previous_financial_line_item.get('working_capital') or 0)
+    working_capital_change = (current_financial_line_item.get("working_capital") or 0) - (
+        previous_financial_line_item.get("working_capital") or 0
+    )
 
     # Owner Earnings Valuation (Buffett Method)
     owner_earnings_value = calculate_owner_earnings_value(
-        net_income=current_financial_line_item.get('net_income'),
-        depreciation=current_financial_line_item.get(
-            'depreciation_and_amortization'),
-        capex=current_financial_line_item.get('capital_expenditure'),
+        net_income=current_financial_line_item.get("net_income"),
+        depreciation=current_financial_line_item.get("depreciation_and_amortization"),
+        capex=current_financial_line_item.get("capital_expenditure"),
         working_capital_change=working_capital_change,
         growth_rate=metrics["earnings_growth"],
         required_return=0.15,
-        margin_of_safety=0.25
+        margin_of_safety=0.25,
     )
 
     # DCF Valuation
     dcf_value = calculate_intrinsic_value(
-        free_cash_flow=current_financial_line_item.get('free_cash_flow'),
+        free_cash_flow=current_financial_line_item.get("free_cash_flow"),
         growth_rate=metrics["earnings_growth"],
         discount_rate=0.10,
         terminal_growth_rate=0.03,
@@ -45,35 +49,33 @@ def valuation_agent(state: AgentState):
     valuation_gap = (dcf_gap + owner_earnings_gap) / 2
 
     if valuation_gap > 0.10:  # Changed from 0.15 to 0.10 (10% undervalued)
-        signal = 'bullish'
+        signal = "bullish"
     elif valuation_gap < -0.20:  # Changed from -0.15 to -0.20 (20% overvalued)
-        signal = 'bearish'
+        signal = "bearish"
     else:
-        signal = 'neutral'
+        signal = "neutral"
 
     reasoning["dcf_analysis"] = {
         "signal": "bullish" if dcf_gap > 0.10 else "bearish" if dcf_gap < -0.20 else "neutral",
-        "details": f"Intrinsic Value: ${dcf_value:,.2f}, Market Cap: ${market_cap:,.2f}, Gap: {dcf_gap:.1%}"
+        "details": f"Intrinsic Value: ${dcf_value:,.2f}, Market Cap: ${market_cap:,.2f}, Gap: {dcf_gap:.1%}",
     }
 
     reasoning["owner_earnings_analysis"] = {
         "signal": "bullish" if owner_earnings_gap > 0.10 else "bearish" if owner_earnings_gap < -0.20 else "neutral",
-        "details": f"Owner Earnings Value: ${owner_earnings_value:,.2f}, Market Cap: ${market_cap:,.2f}, Gap: {owner_earnings_gap:.1%}"
+        "details": f"Owner Earnings Value: ${owner_earnings_value:,.2f}, Market Cap: ${market_cap:,.2f}, Gap: {owner_earnings_gap:.1%}",
     }
 
-    message_content = {
-        "signal": signal,
-        "confidence": f"{abs(valuation_gap):.0%}",
-        "reasoning": reasoning
-    }
+    valuation_analysis = {"signal": signal, "confidence": f"{abs(valuation_gap):.0%}", "reasoning": reasoning}
 
     message = HumanMessage(
-        content=json.dumps(message_content),
-        name="valuation_agent",
+        content=json.dumps(valuation_analysis),
+        name=valuation_agent.__name__,
     )
 
     if show_reasoning:
-        show_agent_reasoning(message_content, "Valuation Analysis Agent")
+        show_agent_reasoning(valuation_analysis, "Valuation Analysis Agent")
+
+    state["data"]["analyst_signals"][valuation_agent.__name__] = valuation_analysis
 
     return {
         "messages": [message],
@@ -89,7 +91,7 @@ def calculate_owner_earnings_value(
     growth_rate: float = 0.05,
     required_return: float = 0.15,
     margin_of_safety: float = 0.25,
-    num_years: int = 5
+    num_years: int = 5,
 ) -> float:
     """
     使用改进的所有者收益法计算公司价值。
@@ -113,12 +115,7 @@ def calculate_owner_earnings_value(
             return 0
 
         # 计算初始所有者收益
-        owner_earnings = (
-            net_income +
-            depreciation -
-            capex -
-            working_capital_change
-        )
+        owner_earnings = net_income + depreciation - capex - working_capital_change
 
         if owner_earnings <= 0:
             return 0
@@ -137,10 +134,8 @@ def calculate_owner_earnings_value(
 
         # 计算永续价值
         terminal_growth = min(growth_rate * 0.4, 0.03)  # 永续增长率取增长率的40%或3%的较小值
-        terminal_value = (
-            future_values[-1] * (1 + terminal_growth)) / (required_return - terminal_growth)
-        terminal_value_discounted = terminal_value / \
-            (1 + required_return) ** num_years
+        terminal_value = (future_values[-1] * (1 + terminal_growth)) / (required_return - terminal_growth)
+        terminal_value_discounted = terminal_value / (1 + required_return) ** num_years
 
         # 计算总价值并应用安全边际
         intrinsic_value = sum(future_values) + terminal_value_discounted
@@ -192,10 +187,8 @@ def calculate_intrinsic_value(
 
         # 计算永续价值
         terminal_year_cf = free_cash_flow * (1 + growth_rate) ** num_years
-        terminal_value = terminal_year_cf * \
-            (1 + terminal_growth_rate) / (discount_rate - terminal_growth_rate)
-        terminal_present_value = terminal_value / \
-            (1 + discount_rate) ** num_years
+        terminal_value = terminal_year_cf * (1 + terminal_growth_rate) / (discount_rate - terminal_growth_rate)
+        terminal_present_value = terminal_value / (1 + discount_rate) ** num_years
 
         # 总价值
         total_value = sum(present_values) + terminal_present_value

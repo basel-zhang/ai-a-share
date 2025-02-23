@@ -164,7 +164,7 @@ def risk_management_agent(state: AgentState):
         else:
             trading_action = agent_signals["valuation"]["signal"]
 
-    message_content = {
+    risk_analysis = {
         "max_position_size": float(max_position_size),
         "risk_score": risk_score,
         "trading_action": trading_action,
@@ -182,12 +182,14 @@ def risk_management_agent(state: AgentState):
 
     # Create the risk management message
     message = HumanMessage(
-        content=json.dumps(message_content),
-        name="risk_management_agent",
+        content=json.dumps(risk_analysis),
+        name=risk_management_agent.__name__,
     )
 
     if show_reasoning:
-        show_agent_reasoning(message_content, "Risk Management Agent")
+        show_agent_reasoning(risk_analysis, "Risk Management Agent")
+
+    state["data"]["analyst_signals"][risk_management_agent.__name__] = risk_analysis
 
     _log.debug(f"message.content: {message.content}")
     _log.debug(f"state['messages'][-1].content: {state['messages'][-1].content}")

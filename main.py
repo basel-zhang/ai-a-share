@@ -59,7 +59,10 @@ def run_a_share(
         },
     )
 
-    return final_state["messages"][-1].content
+    return {
+        "decisions": parse_final_state_response(final_state["messages"][-1].content),
+        "analyst_signals": final_state["data"]["analyst_signals"],
+    }
 
 
 def create_workflow():

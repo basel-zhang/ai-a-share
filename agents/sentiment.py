@@ -1,8 +1,12 @@
-from langchain_core.messages import HumanMessage
-from graph.state import AgentState, show_agent_reasoning
-from utils.news_crawler import get_stock_news, get_news_sentiment
+# -*- coding: utf-8 -*-
+
 import json
 from datetime import datetime, timedelta
+
+from langchain_core.messages import HumanMessage
+
+from graph.state import AgentState, show_agent_reasoning
+from utils.news_crawler import get_news_sentiment, get_stock_news
 
 
 def sentiment_agent(state: AgentState):
@@ -20,8 +24,9 @@ def sentiment_agent(state: AgentState):
 
     # 过滤7天内的新闻
     cutoff_date = datetime.now() - timedelta(days=7)
-    recent_news = [news for news in news_list
-                   if datetime.strptime(news['publish_time'], '%Y-%m-%d %H:%M:%S') > cutoff_date]
+    recent_news = [
+        news for news in news_list if datetime.strptime(news["publish_time"], "%Y-%m-%d %H:%M:%S") > cutoff_date
+    ]
 
     sentiment_score = get_news_sentiment(recent_news, num_of_news=num_of_news)
 
@@ -37,21 +42,23 @@ def sentiment_agent(state: AgentState):
         confidence = str(round((1 - abs(sentiment_score)) * 100)) + "%"
 
     # 生成分析结果
-    message_content = {
+    sentiment_analysis = {
         "signal": signal,
         "confidence": confidence,
-        "reasoning": f"Based on {len(recent_news)} recent news articles, sentiment score: {sentiment_score:.2f}"
+        "reasoning": f"Based on {len(recent_news)} recent news articles, sentiment score: {sentiment_score:.2f}",
     }
 
     # 如果需要显示推理过程
     if show_reasoning:
-        show_agent_reasoning(message_content, "Sentiment Analysis Agent")
+        show_agent_reasoning(sentiment_analysis, "Sentiment Analysis Agent")
 
     # 创建消息
     message = HumanMessage(
-        content=json.dumps(message_content),
+        content=json.dumps(sentiment_analysis),
         name="sentiment_agent",
     )
+
+    state["data"]["analyst_signals"][sentiment_agent.__name__] = sentiment_analysis
 
     return {
         "messages": [message],

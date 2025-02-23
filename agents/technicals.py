@@ -172,7 +172,7 @@ def technical_analyst_agent(state: AgentState):
     )
 
     # Generate detailed analysis report
-    analysis_report = {
+    technical_analysis = {
         "signal": combined_signal["signal"],
         "confidence": f"{round(combined_signal['confidence'] * 100)}%",
         "strategy_signals": {
@@ -206,12 +206,14 @@ def technical_analyst_agent(state: AgentState):
 
     # Create the technical analyst message
     message = HumanMessage(
-        content=json.dumps(analysis_report),
+        content=json.dumps(technical_analysis),
         name=technical_analyst_agent.__name__,
     )
 
     if show_reasoning:
-        show_agent_reasoning(analysis_report, "Technical Analyst")
+        show_agent_reasoning(technical_analysis, "Technical Analyst")
+
+    state["data"]["analyst_signals"][technical_analyst_agent.__name__] = technical_analysis
 
     _log.debug(f"message.content: {message.content}")
 
