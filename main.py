@@ -42,7 +42,7 @@ def run_a_share(
             "messages": [
                 HumanMessage(
                     content="Make a trading decision based on the provided data.",
-                    name="start",
+                    name=run_a_share.__name__,
                 )
             ],
             "data": {

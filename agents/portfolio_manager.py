@@ -122,7 +122,7 @@ def portfolio_management_agent(state: AgentState):
     # Create the portfolio management message
     message = HumanMessage(
         content=result,
-        name="portfolio_management",
+        name=portfolio_management_agent.__name__,
     )
 
     # Print the decision if the flag is set

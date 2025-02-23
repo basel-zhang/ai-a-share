@@ -207,7 +207,7 @@ def technical_analyst_agent(state: AgentState):
     # Create the technical analyst message
     message = HumanMessage(
         content=json.dumps(analysis_report),
-        name="technical_analyst_agent",
+        name=technical_analyst_agent.__name__,
     )
 
     if show_reasoning:

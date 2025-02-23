@@ -1,6 +1,5 @@
 import os
 import time
-from dataclasses import dataclass
 
 import backoff
 from google import genai
@@ -14,21 +13,6 @@ _log = get_logger(__name__)
 SUCCESS_ICON = "✓"
 ERROR_ICON = "✗"
 WAIT_ICON = "⟳"
-
-
-@dataclass
-class ChatMessage:
-    content: str
-
-
-@dataclass
-class ChatChoice:
-    message: ChatMessage
-
-
-@dataclass
-class ChatCompletion:
-    choices: list[ChatChoice]
 
 
 # 验证环境变量
@@ -100,7 +84,7 @@ def get_chat_completion(messages, model=None, max_retries=3, initial_retry_delay
                         prompt += f"Assistant: {content}\n"
 
                 # 准备配置
-                config = {}
+                config = {"response_mime_type": "application/json"}
                 if system_instruction:
                     config["system_instruction"] = system_instruction
 
@@ -116,14 +100,9 @@ def get_chat_completion(messages, model=None, max_retries=3, initial_retry_delay
                         continue
                     return None
 
-                # 转换响应格式
-                chat_message = ChatMessage(content=response.text)
-                chat_choice = ChatChoice(message=chat_message)
-                completion = ChatCompletion(choices=[chat_choice])
-
                 _log.debug(f"API 原始响应: {response.text}")
                 _log.info(f"{SUCCESS_ICON} 成功获取响应")
-                return completion.choices[0].message.content
+                return response.text
 
             except Exception as e:
                 _log.exception(f"{ERROR_ICON} 尝试 {attempt + 1}/{max_retries} 失败: ", e)
