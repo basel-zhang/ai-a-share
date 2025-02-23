@@ -38,10 +38,8 @@ def run_a_share(
     start_date, end_date = get_start_end_date(start_date, end_date)
     _log.info(f"start_date: {start_date}, end_date: {end_date}")
 
-    # Validate dates
-    if start_date > end_date:
-        raise ValueError("Start date cannot be after end date")
-
+    workflow = create_workflow()
+    app = workflow.compile()
     final_state = app.invoke(
         {
             "messages": [
@@ -66,32 +64,34 @@ def run_a_share(
     return final_state["messages"][-1].content
 
 
-# Define the new workflow
-workflow = StateGraph(AgentState)
+def create_workflow():
+    # Define the new workflow
+    workflow = StateGraph(AgentState)
 
-# Add nodes
-workflow.add_node("market_data_agent", market_data_agent)
-workflow.add_node("technical_analyst_agent", technical_analyst_agent)
-workflow.add_node("fundamentals_agent", fundamentals_agent)
-workflow.add_node("sentiment_agent", sentiment_agent)
-workflow.add_node("risk_management_agent", risk_management_agent)
-workflow.add_node("portfolio_management_agent", portfolio_management_agent)
-workflow.add_node("valuation_agent", valuation_agent)
+    # Add nodes
+    workflow.add_node("market_data_agent", market_data_agent)
+    workflow.add_node("technical_analyst_agent", technical_analyst_agent)
+    workflow.add_node("fundamentals_agent", fundamentals_agent)
+    workflow.add_node("sentiment_agent", sentiment_agent)
+    workflow.add_node("risk_management_agent", risk_management_agent)
+    workflow.add_node("portfolio_management_agent", portfolio_management_agent)
+    workflow.add_node("valuation_agent", valuation_agent)
 
-# Define the workflow
-workflow.set_entry_point("market_data_agent")
-workflow.add_edge("market_data_agent", "technical_analyst_agent")
-workflow.add_edge("market_data_agent", "fundamentals_agent")
-workflow.add_edge("market_data_agent", "sentiment_agent")
-workflow.add_edge("market_data_agent", "valuation_agent")
-workflow.add_edge("technical_analyst_agent", "risk_management_agent")
-workflow.add_edge("fundamentals_agent", "risk_management_agent")
-workflow.add_edge("sentiment_agent", "risk_management_agent")
-workflow.add_edge("valuation_agent", "risk_management_agent")
-workflow.add_edge("risk_management_agent", "portfolio_management_agent")
-workflow.add_edge("portfolio_management_agent", END)
+    # Define the workflow
+    workflow.set_entry_point("market_data_agent")
+    workflow.add_edge("market_data_agent", "technical_analyst_agent")
+    workflow.add_edge("market_data_agent", "fundamentals_agent")
+    workflow.add_edge("market_data_agent", "sentiment_agent")
+    workflow.add_edge("market_data_agent", "valuation_agent")
+    workflow.add_edge("technical_analyst_agent", "risk_management_agent")
+    workflow.add_edge("fundamentals_agent", "risk_management_agent")
+    workflow.add_edge("sentiment_agent", "risk_management_agent")
+    workflow.add_edge("valuation_agent", "risk_management_agent")
+    workflow.add_edge("risk_management_agent", "portfolio_management_agent")
+    workflow.add_edge("portfolio_management_agent", END)
 
-app = workflow.compile()
+    return workflow
+
 
 # Add this at the bottom of the file
 if __name__ == "__main__":
