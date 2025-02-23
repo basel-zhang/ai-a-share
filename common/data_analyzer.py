@@ -1,7 +1,6 @@
-import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-from common.api import get_price_history
+from tools.api import get_price_history
 
 
 def analyze_stock_data(symbol: str, start_date: str = None, end_date: str = None):

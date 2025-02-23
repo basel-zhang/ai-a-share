@@ -27,7 +27,7 @@ DEFAULT_CONFIG = {
             "level": "DEBUG",
             "formatter": "standard",
             "class": "logging.handlers.TimedRotatingFileHandler",
-            "filename": os.path.join(PROJECT_ROOT, "log", "app.default.log"),
+            "filename": os.path.join(PROJECT_ROOT, "logs", "app.default.log"),
             "when": "D",
             "encoding": "utf-8",
         },
@@ -35,7 +35,7 @@ DEFAULT_CONFIG = {
             "level": "ERROR",
             "formatter": "standard",
             "class": "logging.handlers.TimedRotatingFileHandler",
-            "filename": os.path.join(PROJECT_ROOT, "log", "app.error.log"),
+            "filename": os.path.join(PROJECT_ROOT, "logs", "app.error.log"),
             "when": "D",
             "encoding": "utf-8",
         },
@@ -76,7 +76,7 @@ def log_entry_exit(func):
 
 def get_logger(name=None):
     # Create log directory if missing
-    os.makedirs(os.path.join(PROJECT_ROOT, "log"), exist_ok=True)
+    os.makedirs(os.path.join(PROJECT_ROOT, "logs"), exist_ok=True)
 
     # Configure logging
     logging.config.dictConfig(DEFAULT_CONFIG)

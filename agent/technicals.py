@@ -9,7 +9,7 @@ import json
 import pandas as pd
 import numpy as np
 
-from common.api import prices_to_df
+from tools.api import prices_to_df
 
 
 ##### Technical Analyst #####

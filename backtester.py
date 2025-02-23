@@ -4,7 +4,7 @@ import time
 import logging
 import matplotlib.pyplot as plt
 import pandas as pd
-from common.api import get_price_data
+from tools.api import get_price_data
 from main import run_a_share
 import sys
 import matplotlib
