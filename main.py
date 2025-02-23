@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import argparse
-from datetime import datetime, timedelta
+import json
 
+from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage
 from langgraph.graph import END, StateGraph
 
@@ -10,20 +11,37 @@ from agents.market_data import market_data_agent
 from agents.portfolio_manager import portfolio_management_agent
 from agents.risk_manager import risk_management_agent
 from agents.sentiment import sentiment_agent
-from agents.state import AgentState
 from agents.technicals import technical_analyst_agent
 from agents.valuation import valuation_agent
-from dotenv import load_dotenv
-from utils.my_logging import get_logger
+from graph.state import AgentState
+from utils.datetime_util import get_start_end_date
+from utils.my_logging import get_logger, log_entry_exit
 
 _log = get_logger(__name__)
 
 load_dotenv()
 
 
+@log_entry_exit
+def parse_final_state_response(response):
+    try:
+        return json.loads(response)
+    except Exception as e:
+        _log.exception(f"Error parsing response: {e}")
+        return None
+
+
 def run_a_share(
     ticker: str, start_date: str, end_date: str, portfolio: dict, show_reasoning: bool = False, num_of_news: int = 5
 ):
+
+    start_date, end_date = get_start_end_date(start_date, end_date)
+    _log.info(f"start_date: {start_date}, end_date: {end_date}")
+
+    # Validate dates
+    if start_date > end_date:
+        raise ValueError("Start date cannot be after end date")
+
     final_state = app.invoke(
         {
             "messages": [
@@ -37,12 +55,14 @@ def run_a_share(
                 "start_date": start_date,
                 "end_date": end_date,
                 "num_of_news": num_of_news,
+                "analyst_signals": {},
             },
             "metadata": {
                 "show_reasoning": show_reasoning,
             },
         },
     )
+
     return final_state["messages"][-1].content
 
 
@@ -90,21 +110,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Set end date to yesterday if not specified
-    current_date = datetime.now()
-    yesterday = current_date - timedelta(days=1)
-    end_date = yesterday if not args.end_date else min(datetime.strptime(args.end_date, "%Y-%m-%d"), yesterday)
-
-    # Set start date to one year before end date if not specified
-    if not args.start_date:
-        start_date = end_date - timedelta(days=365)  # 默认获取一年的数据
-    else:
-        start_date = datetime.strptime(args.start_date, "%Y-%m-%d")
-
-    # Validate dates
-    if start_date > end_date:
-        raise ValueError("Start date cannot be after end date")
-
     # Validate num_of_news
     if args.num_of_news < 1:
         raise ValueError("Number of news articles must be at least 1")
@@ -116,10 +121,11 @@ if __name__ == "__main__":
 
     result = run_a_share(
         ticker=args.ticker,
-        start_date=start_date.strftime("%Y-%m-%d"),
-        end_date=end_date.strftime("%Y-%m-%d"),
+        start_date=args.start_date,
+        end_date=args.end_date,
         portfolio=portfolio,
         show_reasoning=args.show_reasoning,
         num_of_news=args.num_of_news,
     )
     _log.info(f"\nFinal Result:\n{result}")
+    # print_trading_output(result)

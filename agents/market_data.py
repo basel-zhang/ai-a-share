@@ -2,9 +2,11 @@
 
 import pandas as pd
 
-from agents.state import AgentState
-from utils.datetime_util import get_start_end_date
+from graph.state import AgentState
 from tools.api import get_financial_metrics, get_financial_statements, get_market_data, get_price_history
+from utils.my_logging import get_logger
+
+_log = get_logger(__name__)
 
 
 def market_data_agent(state: AgentState):
@@ -12,10 +14,10 @@ def market_data_agent(state: AgentState):
     messages = state["messages"]
     data = state["data"]
 
-    start_date, end_date = get_start_end_date(state)
-
     # Get all required data
     ticker = data["ticker"]
+    start_date = data["start_date"]
+    end_date = data["end_date"]
 
     # 获取价格数据并验证
     prices_df = get_price_history(ticker, start_date, end_date)
@@ -50,6 +52,8 @@ def market_data_agent(state: AgentState):
 
     # 转换价格数据为字典格式
     prices_dict = prices_df.to_dict("records")
+
+    _log.debug(f"messages[-1].content: {messages[-1].content}")
 
     return {
         "messages": messages,
