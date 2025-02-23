@@ -7,7 +7,7 @@ import akshare as ak
 import numpy as np
 import pandas as pd
 
-from utils.datetime_util import get_tushare_date
+from utils.datetime_util import DATE_FORMAT, get_tushare_date
 from utils.my_logging import get_logger
 from utils.my_tushare import convert_to_tushare_code, get_pro_api
 
@@ -385,7 +385,7 @@ def get_price_history(ticker: str, start_date: str = None, end_date: str = None)
             _log.info("尝试获取更长时间范围的数据...")
 
             # 扩大时间范围到2年
-            start_date = end_date - timedelta(days=730)
+            start_date = (datetime.strptime(end_date, DATE_FORMAT) - timedelta(days=730)).strftime(DATE_FORMAT)
             df = get_and_process_data(start_date, end_date)
 
             if len(df) < min_required_days:
