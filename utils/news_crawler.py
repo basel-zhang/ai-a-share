@@ -1,13 +1,12 @@
-import os
-import sys
 import json
+import os
 from datetime import datetime
+
 import akshare as ak
-import requests
-from bs4 import BeautifulSoup
-from utils.openrouter_config import get_chat_completion, logger as api_logger
-import time
 import pandas as pd
+
+from utils.my_logging import PROJECT_ROOT
+from utils.openrouter_config import get_chat_completion
 
 
 def get_stock_news(symbol: str, max_news: int = 10) -> list:
@@ -22,10 +21,10 @@ def get_stock_news(symbol: str, max_news: int = 10) -> list:
     """
 
     # 设置pandas显示选项，确保显示完整内容
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.max_rows', None)
-    pd.set_option('display.max_colwidth', None)
-    pd.set_option('display.width', None)
+    pd.set_option("display.max_columns", None)
+    pd.set_option("display.max_rows", None)
+    pd.set_option("display.max_colwidth", None)
+    pd.set_option("display.width", None)
 
     # 限制最大新闻条数
     max_news = min(max_news, 100)
@@ -34,9 +33,7 @@ def get_stock_news(symbol: str, max_news: int = 10) -> list:
     today = datetime.now().strftime("%Y-%m-%d")
 
     # 构建新闻文件路径
-    project_root = os.path.dirname(os.path.dirname(
-        os.path.dirname(os.path.abspath(__file__))))
-    news_dir = os.path.join(project_root, "data", "stock_news")
+    news_dir = os.path.join(PROJECT_ROOT, "data", "stock_news")
     print(f"新闻保存目录: {news_dir}")
 
     # 确保目录存在
@@ -54,7 +51,7 @@ def get_stock_news(symbol: str, max_news: int = 10) -> list:
     need_update = True
     if os.path.exists(news_file):
         try:
-            with open(news_file, 'r', encoding='utf-8') as f:
+            with open(news_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 if data.get("date") == today:
                     cached_news = data.get("news", [])
@@ -62,12 +59,11 @@ def get_stock_news(symbol: str, max_news: int = 10) -> list:
                         print(f"使用缓存的新闻数据: {news_file}")
                         return cached_news[:max_news]
                     else:
-                        print(
-                            f"缓存的新闻数量({len(cached_news)})不足，需要获取更多新闻({max_news}条)")
+                        print(f"缓存的新闻数量({len(cached_news)})不足，需要获取更多新闻({max_news}条)")
         except Exception as e:
             print(f"读取缓存文件失败: {e}")
 
-    print(f'开始获取{symbol}的新闻数据...')
+    print(f"开始获取{symbol}的新闻数据...")
 
     try:
         # 获取新闻列表
@@ -89,8 +85,7 @@ def get_stock_news(symbol: str, max_news: int = 10) -> list:
         for _, row in news_df.head(int(max_news * 1.5)).iterrows():
             try:
                 # 获取新闻内容
-                content = row["新闻内容"] if "新闻内容" in row and not pd.isna(
-                    row["新闻内容"]) else ""
+                content = row["新闻内容"] if "新闻内容" in row and not pd.isna(row["新闻内容"]) else ""
                 if not content:
                     content = row["新闻标题"]
 
@@ -100,8 +95,7 @@ def get_stock_news(symbol: str, max_news: int = 10) -> list:
                     continue
 
                 # 获取关键词
-                keyword = row["关键词"] if "关键词" in row and not pd.isna(
-                    row["关键词"]) else ""
+                keyword = row["关键词"] if "关键词" in row and not pd.isna(row["关键词"]) else ""
 
                 # 添加新闻
                 news_item = {
@@ -110,7 +104,7 @@ def get_stock_news(symbol: str, max_news: int = 10) -> list:
                     "publish_time": row["发布时间"],
                     "source": row["文章来源"].strip(),
                     "url": row["新闻链接"].strip(),
-                    "keyword": keyword.strip()
+                    "keyword": keyword.strip(),
                 }
                 news_list.append(news_item)
                 print(f"成功添加新闻: {news_item['title']}")
@@ -127,11 +121,8 @@ def get_stock_news(symbol: str, max_news: int = 10) -> list:
 
         # 保存到文件
         try:
-            save_data = {
-                "date": today,
-                "news": news_list
-            }
-            with open(news_file, 'w', encoding='utf-8') as f:
+            save_data = {"date": today, "news": news_list}
+            with open(news_file, "w", encoding="utf-8") as f:
                 json.dump(save_data, f, ensure_ascii=False, indent=2)
             print(f"成功保存{len(news_list)}条新闻到文件: {news_file}")
         except Exception as e:
@@ -167,16 +158,15 @@ def get_news_sentiment(news_list: list, num_of_news: int = 5) -> float:
     os.makedirs(os.path.dirname(cache_file), exist_ok=True)
 
     # 生成新闻内容的唯一标识
-    news_key = "|".join([
-        f"{news['title']}|{news['content'][:100]}|{news['publish_time']}"
-        for news in news_list[:num_of_news]
-    ])
+    news_key = "|".join(
+        [f"{news['title']}|{news['content'][:100]}|{news['publish_time']}" for news in news_list[:num_of_news]]
+    )
 
     # 检查缓存
     if os.path.exists(cache_file):
         print("发现情感分析缓存文件")
         try:
-            with open(cache_file, 'r', encoding='utf-8') as f:
+            with open(cache_file, "r", encoding="utf-8") as f:
                 cache = json.load(f)
                 if news_key in cache:
                     print("使用缓存的情感分析结果")
@@ -214,21 +204,23 @@ def get_news_sentiment(news_list: list, num_of_news: int = 5) -> float:
         1. 新闻的真实性和可靠性
         2. 新闻的时效性和影响范围
         3. 对公司基本面的实际影响
-        4. A股市场的特殊反应规律"""
+        4. A股市场的特殊反应规律""",
     }
 
     # 准备新闻内容
-    news_content = "\n\n".join([
-        f"标题：{news['title']}\n"
-        f"来源：{news['source']}\n"
-        f"时间：{news['publish_time']}\n"
-        f"内容：{news['content']}"
-        for news in news_list[:num_of_news]  # 使用指定数量的新闻
-    ])
+    news_content = "\n\n".join(
+        [
+            f"标题：{news['title']}\n"
+            f"来源：{news['source']}\n"
+            f"时间：{news['publish_time']}\n"
+            f"内容：{news['content']}"
+            for news in news_list[:num_of_news]  # 使用指定数量的新闻
+        ]
+    )
 
     user_message = {
         "role": "user",
-        "content": f"请分析以下A股上市公司相关新闻的情感倾向：\n\n{news_content}\n\n请直接返回一个数字，范围是-1到1，无需解释。"
+        "content": f"请分析以下A股上市公司相关新闻的情感倾向：\n\n{news_content}\n\n请直接返回一个数字，范围是-1到1，无需解释。",
     }
 
     try:
@@ -252,7 +244,7 @@ def get_news_sentiment(news_list: list, num_of_news: int = 5) -> float:
         # 缓存结果
         cache[news_key] = sentiment_score
         try:
-            with open(cache_file, 'w', encoding='utf-8') as f:
+            with open(cache_file, "w", encoding="utf-8") as f:
                 json.dump(cache, f, ensure_ascii=False, indent=2)
         except Exception as e:
             print(f"Error writing cache: {e}")
