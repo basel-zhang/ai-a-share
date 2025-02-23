@@ -13,6 +13,7 @@ def fundamentals_agent(state: AgentState):
     """Analyzes fundamental data and generates trading signals."""
     show_reasoning = state["metadata"]["show_reasoning"]
     data = state["data"]
+    ticker = data["ticker"]
     metrics = data["financial_metrics"][0]
 
     # Initialize signals list for different fundamental aspects
@@ -162,7 +163,7 @@ def fundamentals_agent(state: AgentState):
     if show_reasoning:
         show_agent_reasoning(fundamentals_analysis, "Fundamental Analysis Agent")
 
-    state["data"]["analyst_signals"][fundamentals_agent.__name__] = fundamentals_analysis
+    state["data"]["analyst_signals"][fundamentals_agent.__name__] = {ticker: fundamentals_analysis}
 
     return {
         "messages": [message],

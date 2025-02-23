@@ -14,13 +14,13 @@ def sentiment_agent(state: AgentState):
     print(f"----------state-----------: {state}")
     show_reasoning = state["metadata"]["show_reasoning"]
     data = state["data"]
-    symbol = data["ticker"]
-    print(f"----------symbol-----------: {symbol}")
+    ticker = data["ticker"]
+    print(f"----------symbol-----------: {ticker}")
     # 从命令行参数获取新闻数量，默认为5条
     num_of_news = data.get("num_of_news", 5)
 
     # 获取新闻数据并分析情感
-    news_list = get_stock_news(symbol, max_news=num_of_news)  # 确保获取足够的新闻
+    news_list = get_stock_news(ticker, max_news=num_of_news)  # 确保获取足够的新闻
 
     # 过滤7天内的新闻
     cutoff_date = datetime.now() - timedelta(days=7)
@@ -58,7 +58,7 @@ def sentiment_agent(state: AgentState):
         name="sentiment_agent",
     )
 
-    state["data"]["analyst_signals"][sentiment_agent.__name__] = sentiment_analysis
+    state["data"]["analyst_signals"][sentiment_agent.__name__] = {ticker: sentiment_analysis}
 
     return {
         "messages": [message],

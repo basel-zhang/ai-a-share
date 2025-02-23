@@ -12,6 +12,7 @@ from agents.risk_manager import risk_management_agent
 from graph.state import AgentState
 from utils.analysts import get_analyst_nodes
 from utils.datetime_util import get_start_end_date
+from utils.display import print_trading_output
 from utils.my_logging import get_logger, log_entry_exit
 
 _log = get_logger(__name__)
@@ -60,7 +61,7 @@ def run_a_share(
     )
 
     return {
-        "decisions": parse_final_state_response(final_state["messages"][-1].content),
+        "decisions": {ticker: parse_final_state_response(final_state["messages"][-1].content)},
         "analyst_signals": final_state["data"]["analyst_signals"],
     }
 
@@ -132,4 +133,4 @@ if __name__ == "__main__":
         num_of_news=args.num_of_news,
     )
     _log.info(f"\nFinal Result:\n{result}")
-    # print_trading_output(result)
+    print_trading_output(result)

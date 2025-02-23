@@ -11,6 +11,7 @@ def valuation_agent(state: AgentState):
     """Performs detailed valuation analysis using multiple methodologies."""
     show_reasoning = state["metadata"]["show_reasoning"]
     data = state["data"]
+    ticker = data["ticker"]
     metrics = data["financial_metrics"][0]
     current_financial_line_item = data["financial_line_items"][0]
     previous_financial_line_item = data["financial_line_items"][1]
@@ -75,7 +76,7 @@ def valuation_agent(state: AgentState):
     if show_reasoning:
         show_agent_reasoning(valuation_analysis, "Valuation Analysis Agent")
 
-    state["data"]["analyst_signals"][valuation_agent.__name__] = valuation_analysis
+    state["data"]["analyst_signals"][valuation_agent.__name__] = {ticker: valuation_analysis}
 
     return {
         "messages": [message],

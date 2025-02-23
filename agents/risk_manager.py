@@ -25,7 +25,7 @@ def risk_management_agent(state: AgentState):
     show_reasoning = state["metadata"]["show_reasoning"]
     portfolio = state["data"]["portfolio"]
     data = state["data"]
-
+    ticker = data["ticker"]
     prices_df = data["prices"]
 
     # Fetch messages from other agents
@@ -189,7 +189,7 @@ def risk_management_agent(state: AgentState):
     if show_reasoning:
         show_agent_reasoning(risk_analysis, "Risk Management Agent")
 
-    state["data"]["analyst_signals"][risk_management_agent.__name__] = risk_analysis
+    state["data"]["analyst_signals"][risk_management_agent.__name__] = {ticker: risk_analysis}
 
     _log.debug(f"message.content: {message.content}")
     _log.debug(f"state['messages'][-1].content: {state['messages'][-1].content}")

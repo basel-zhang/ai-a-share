@@ -26,115 +26,8 @@ def technical_analyst_agent(state: AgentState):
     """
     show_reasoning = state["metadata"]["show_reasoning"]
     data = state["data"]
+    ticker = data["ticker"]
     prices_df = data["prices"]
-
-    # Initialize confidence variable
-    confidence = 0.0
-
-    # Calculate indicators
-    # 1. MACD (Moving Average Convergence Divergence)
-    macd_line, signal_line = calculate_macd(prices_df)
-
-    # 2. RSI (Relative Strength Index)
-    rsi = calculate_rsi(prices_df)
-
-    # 3. Bollinger Bands (Bollinger Bands)
-    upper_band, lower_band = calculate_bollinger_bands(prices_df)
-
-    # 4. OBV (On-Balance Volume)
-    obv = calculate_obv(prices_df)
-
-    # Generate individual signals
-    signals = []
-
-    # MACD signal
-    if macd_line.iloc[-2] < signal_line.iloc[-2] and macd_line.iloc[-1] > signal_line.iloc[-1]:
-        signals.append("bullish")
-    elif macd_line.iloc[-2] > signal_line.iloc[-2] and macd_line.iloc[-1] < signal_line.iloc[-1]:
-        signals.append("bearish")
-    else:
-        signals.append("neutral")
-
-    # RSI signal
-    if rsi.iloc[-1] < 30:
-        signals.append("bullish")
-    elif rsi.iloc[-1] > 70:
-        signals.append("bearish")
-    else:
-        signals.append("neutral")
-
-    # Bollinger Bands signal
-    current_price = prices_df["close"].iloc[-1]
-    if current_price < lower_band.iloc[-1]:
-        signals.append("bullish")
-    elif current_price > upper_band.iloc[-1]:
-        signals.append("bearish")
-    else:
-        signals.append("neutral")
-
-    # OBV signal
-    obv_slope = obv.diff().iloc[-5:].mean()
-    if obv_slope > 0:
-        signals.append("bullish")
-    elif obv_slope < 0:
-        signals.append("bearish")
-    else:
-        signals.append("neutral")
-
-    # Calculate price drop
-    price_drop = (prices_df["close"].iloc[-1] - prices_df["close"].iloc[-5]) / prices_df["close"].iloc[-5]
-
-    # Add price drop signal
-    if price_drop < -0.05 and rsi.iloc[-1] < 40:  # 5% drop and RSI below 40
-        signals.append("bullish")
-        confidence += 0.2  # Increase confidence for oversold conditions
-    elif price_drop < -0.03 and rsi.iloc[-1] < 45:  # 3% drop and RSI below 45
-        signals.append("bullish")
-        confidence += 0.1
-
-    # Add reasoning collection
-    reasoning = {
-        "MACD": {
-            "signal": signals[0],
-            "details": f"MACD Line crossed {'above' if signals[0] == 'bullish' else 'below' if signals[0] == 'bearish' else 'neither above nor below'} Signal Line",
-        },
-        "RSI": {
-            "signal": signals[1],
-            "details": f"RSI is {rsi.iloc[-1]:.2f} ({'oversold' if signals[1] == 'bullish' else 'overbought' if signals[1] == 'bearish' else 'neutral'})",
-        },
-        "Bollinger": {
-            "signal": signals[2],
-            "details": f"Price is {'below lower band' if signals[2] == 'bullish' else 'above upper band' if signals[2] == 'bearish' else 'within bands'}",
-        },
-        "OBV": {"signal": signals[3], "details": f"OBV slope is {obv_slope:.2f} ({signals[3]})"},
-    }
-
-    # Determine overall signal
-    bullish_signals = signals.count("bullish")
-    bearish_signals = signals.count("bearish")
-
-    if bullish_signals > bearish_signals:
-        overall_signal = "bullish"
-    elif bearish_signals > bullish_signals:
-        overall_signal = "bearish"
-    else:
-        overall_signal = "neutral"
-
-    # Calculate confidence level based on the proportion of indicators agreeing
-    total_signals = len(signals)
-    confidence = max(bullish_signals, bearish_signals) / total_signals
-
-    # Generate the message content
-    message_content = {
-        "signal": overall_signal,
-        "confidence": f"{round(confidence * 100)}%",
-        "reasoning": {
-            "MACD": reasoning["MACD"],
-            "RSI": reasoning["RSI"],
-            "Bollinger": reasoning["Bollinger"],
-            "OBV": reasoning["OBV"],
-        },
-    }
 
     # 1. Trend Following Strategy
     trend_signals = calculate_trend_signals(prices_df)
@@ -213,7 +106,7 @@ def technical_analyst_agent(state: AgentState):
     if show_reasoning:
         show_agent_reasoning(technical_analysis, "Technical Analyst")
 
-    state["data"]["analyst_signals"][technical_analyst_agent.__name__] = technical_analysis
+    state["data"]["analyst_signals"][technical_analyst_agent.__name__] = {ticker: technical_analysis}
 
     _log.debug(f"message.content: {message.content}")
 
