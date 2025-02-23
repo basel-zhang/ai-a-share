@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 import math
 from typing import Dict
@@ -7,6 +9,9 @@ import pandas as pd
 from langchain_core.messages import HumanMessage
 
 from graph.state import AgentState, show_agent_reasoning
+from utils.my_logging import get_logger
+
+_log = get_logger(__name__)
 
 
 ##### Technical Analyst #####
@@ -207,6 +212,8 @@ def technical_analyst_agent(state: AgentState):
 
     if show_reasoning:
         show_agent_reasoning(analysis_report, "Technical Analyst")
+
+    _log.debug(f"message.content: {message.content}")
 
     return {
         "messages": [message],
