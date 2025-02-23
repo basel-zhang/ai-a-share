@@ -22,28 +22,28 @@ def market_data_agent(state: AgentState):
     # 获取价格数据并验证
     prices_df = get_price_history(ticker, start_date, end_date)
     if prices_df is None or prices_df.empty:
-        print(f"警告：无法获取{ticker}的价格数据，将使用空数据继续")
+        _log.error(f"Unable to fetch price data for {ticker}, continuing with empty data")
         prices_df = pd.DataFrame(columns=["close", "open", "high", "low", "volume"])
 
     # 获取财务指标
     try:
         financial_metrics = get_financial_metrics(ticker)
     except Exception as e:
-        print(f"获取财务指标失败: {str(e)}")
+        _log.exception("获取财务指标失败: ", e)
         financial_metrics = {}
 
     # 获取财务报表
     try:
         financial_line_items = get_financial_statements(ticker)
     except Exception as e:
-        print(f"获取财务报表失败: {str(e)}")
+        _log.exception("获取财务报表失败: ", e)
         financial_line_items = {}
 
     # 获取市场数据
     try:
         market_data = get_market_data(ticker)
     except Exception as e:
-        print(f"获取市场数据失败: {str(e)}")
+        _log.exception("获取市场数据失败: ", e)
         market_data = {"market_cap": 0}
 
     # 确保数据格式正确
@@ -60,8 +60,6 @@ def market_data_agent(state: AgentState):
         "data": {
             **data,
             "prices": prices_dict,
-            "start_date": start_date,
-            "end_date": end_date,
             "financial_metrics": financial_metrics,
             "financial_line_items": financial_line_items,
             "market_cap": market_data.get("market_cap", 0),
