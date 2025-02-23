@@ -7,6 +7,7 @@ import akshare as ak
 import numpy as np
 import pandas as pd
 
+from utils.datetime_util import get_tushare_date
 from utils.my_logging import get_logger
 from utils.my_tushare import convert_to_tushare_code, get_pro_api
 
@@ -297,7 +298,7 @@ def get_market_data(symbol: str) -> Dict[str, Any]:
         return {}
 
 
-def get_price_history(symbol: str, start_date: str = None, end_date: str = None) -> pd.DataFrame:
+def get_price_history(ticker: str, start_date: str = None, end_date: str = None) -> pd.DataFrame:
     """获取历史价格数据
 
     Args:
@@ -334,19 +335,21 @@ def get_price_history(symbol: str, start_date: str = None, end_date: str = None)
     """
     try:
 
-        _log.info(f"正在获取 {symbol} 的历史行情数据...")
-        _log.info(f"开始日期：{start_date}")
-        _log.info(f"结束日期：{end_date}")
-
         def get_and_process_data(start_date, end_date):
 
-            ts_code = convert_to_tushare_code(symbol)
+            ts_code = convert_to_tushare_code(ticker)
+            ts_start_date = get_tushare_date(start_date)
+            ts_end_date = get_tushare_date(end_date)
+
+            _log.info(f"正在获取 {ts_code} 的历史行情数据...")
+            _log.info(f"开始日期：{ts_start_date}")
+            _log.info(f"结束日期：{ts_end_date}")
 
             """获取并处理数据，包括重命名列等操作"""
             df_daily = pro.bak_daily(
                 ts_code=ts_code,
-                start_date=start_date,
-                end_date=end_date,
+                start_date=ts_start_date,
+                end_date=ts_end_date,
                 fields="trade_date,open,high,low,close,vol,amount,swing,pct_change,change,turn_over",
             )
 
@@ -372,7 +375,7 @@ def get_price_history(symbol: str, start_date: str = None, end_date: str = None)
         df = get_and_process_data(start_date, end_date)
 
         if df is None or df.empty:
-            _log.warning(f"警告：未获取到 {symbol} 的历史行情数据")
+            _log.warning(f"警告：未获取到 {ticker} 的历史行情数据")
             return pd.DataFrame()
 
         # 检查数据量是否足够

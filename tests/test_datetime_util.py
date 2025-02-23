@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from utils.datetime_util import get_start_end_date
+from utils.datetime_util import DATE_FORMAT, get_start_end_date
 
 
 def test_get_start_end_date_with_both_dates_provided():
@@ -69,13 +69,13 @@ def test_end_date_adjustment_when_in_future():
 def test_invalid_start_date_format():
     with pytest.raises(ValueError) as exc_info:
         get_start_end_date("2023/01/01", "2023-01-07")
-    assert "Start date must be in YYYY-MM-DD format" in str(exc_info.value)
+    assert f"Start date must be in {DATE_FORMAT} format" in str(exc_info.value)
 
 
 def test_invalid_end_date_format():
     with pytest.raises(ValueError) as exc_info:
         get_start_end_date("2023-01-01", "07-01-2023")
-    assert "End date must be in YYYY-MM-DD format" in str(exc_info.value)
+    assert f"End date must be in {DATE_FORMAT} format" in str(exc_info.value)
 
 
 def test_start_date_after_end_date():
@@ -87,7 +87,7 @@ def test_start_date_after_end_date():
 def test_invalid_date_with_correct_format():
     with pytest.raises(ValueError) as exc_info:
         get_start_end_date("2023-02-30", "2023-03-01")  # February doesn't have 30 days
-    assert "Start date must be in YYYY-MM-DD format" in str(exc_info.value)
+    assert f"Start date must be in {DATE_FORMAT} format" in str(exc_info.value)
 
 
 def test_mixed_invalid_formats():
@@ -95,9 +95,9 @@ def test_mixed_invalid_formats():
     with pytest.raises(ValueError) as exc_info:
         # First invalid format (start_date)
         get_start_end_date("01-01-2023", "2023-12-31")
-    assert "Start date must be in YYYY-MM-DD format" in str(exc_info.value)
+    assert f"Start date must be in {DATE_FORMAT} format" in str(exc_info.value)
 
     with pytest.raises(ValueError) as exc_info:
         # Second invalid format (end_date)
         get_start_end_date("2023-01-01", "2023/13/01")
-    assert "End date must be in YYYY-MM-DD format" in str(exc_info.value)
+    assert f"End date must be in {DATE_FORMAT} format" in str(exc_info.value)

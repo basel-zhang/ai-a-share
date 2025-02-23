@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 import json
+import os
 
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage
@@ -15,9 +16,11 @@ from utils.datetime_util import get_start_end_date
 from utils.display import print_trading_output
 from utils.my_logging import get_logger, log_entry_exit
 
+load_dotenv()
 _log = get_logger(__name__)
 
-load_dotenv()
+# Log the environment variables
+_log.debug(f"GEMINI_MODEL: {os.getenv('GEMINI_MODEL')}")
 
 
 @log_entry_exit
@@ -30,7 +33,12 @@ def parse_final_state_response(response):
 
 
 def run_a_share(
-    ticker: str, start_date: str, end_date: str, portfolio: dict, show_reasoning: bool = False, num_of_news: int = 5
+    ticker: str,
+    start_date: str,
+    end_date: str,
+    portfolio: dict,
+    show_reasoning: bool = False,
+    num_of_news: int = 5,
 ):
 
     start_date, end_date = get_start_end_date(start_date, end_date)
