@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from datetime import datetime, timedelta
 from typing import Any, Dict
 
@@ -16,7 +18,7 @@ pro = get_pro_api()
 def get_financial_metrics(symbol: str) -> Dict[str, Any]:
     """获取财务指标数据"""
     try:
-        _log.info(f"\n正在获取 {symbol} 的财务指标数据...")
+        _log.info(f"正在获取 {symbol} 的财务指标数据...")
 
         # 获取实时行情数据（用于市值和估值比率）
         _log.info("获取实时行情...")
@@ -34,7 +36,7 @@ def get_financial_metrics(symbol: str) -> Dict[str, Any]:
         _log.info("成功获取实时行情数据")
 
         # 获取新浪财务指标
-        _log.info("\n获取新浪财务指标...")
+        _log.info("获取新浪财务指标...")
         current_year = datetime.now().year
         financial_data = ak.stock_financial_analysis_indicator(symbol=symbol, start_year=str(current_year - 1))
         if financial_data is None or financial_data.empty:
@@ -49,7 +51,7 @@ def get_financial_metrics(symbol: str) -> Dict[str, Any]:
         _log.info(f"最新数据日期：{latest_financial.get('日期')}")
 
         # 获取利润表数据（用于计算 price_to_sales）
-        _log.info("\n获取利润表数据...")
+        _log.info("获取利润表数据...")
         try:
             income_statement = ak.stock_financial_report_sina(stock=f"sh{symbol}", symbol="利润表")
             if not income_statement.empty:
@@ -63,7 +65,7 @@ def get_financial_metrics(symbol: str) -> Dict[str, Any]:
             latest_income = pd.Series()
 
         # 构建完整指标数据
-        _log.info("\n构建指标数据...")
+        _log.info("构建指标数据...")
         try:
 
             def convert_percentage(value: float) -> float:
@@ -126,11 +128,11 @@ def get_financial_metrics(symbol: str) -> Dict[str, Any]:
             _log.info("成功构建指标数据")
 
             # 打印所有获取到的指标数据（用于调试）
-            _log.info("\n获取到的完整指标数据：")
+            _log.info("获取到的完整指标数据：")
             for key, value in all_metrics.items():
                 print(f"{key}: {value}")
 
-            _log.info("\n传递给 agent 的指标数据：")
+            _log.info("传递给 agent 的指标数据：")
             for key, value in agent_metrics.items():
                 _log.info(f"{key}: {value}")
 
@@ -148,10 +150,10 @@ def get_financial_metrics(symbol: str) -> Dict[str, Any]:
 def get_financial_statements(symbol: str) -> Dict[str, Any]:
     """获取财务报表数据"""
     try:
-        _log.info(f"\n正在获取 {symbol} 的财务报表数据...")
+        _log.info(f"正在获取 {symbol} 的财务报表数据...")
 
         # 获取资产负债表数据
-        _log.info("\n获取资产负债表数据...")
+        _log.info("获取资产负债表数据...")
         try:
             balance_sheet = ak.stock_financial_report_sina(stock=f"sh{symbol}", symbol="资产负债表")
             if not balance_sheet.empty:
@@ -168,7 +170,7 @@ def get_financial_statements(symbol: str) -> Dict[str, Any]:
             previous_balance = pd.Series()
 
         # 获取利润表数据
-        _log.info("\n获取利润表数据...")
+        _log.info("获取利润表数据...")
         try:
             income_statement = ak.stock_financial_report_sina(stock=f"sh{symbol}", symbol="利润表")
             if not income_statement.empty:
@@ -185,7 +187,7 @@ def get_financial_statements(symbol: str) -> Dict[str, Any]:
             previous_income = pd.Series()
 
         # 获取现金流量表数据
-        _log.info("\n获取现金流量表数据...")
+        _log.info("获取现金流量表数据...")
         try:
             cash_flow = ak.stock_financial_report_sina(stock=f"sh{symbol}", symbol="现金流量表")
             if not cash_flow.empty:
@@ -331,27 +333,10 @@ def get_price_history(symbol: str, start_date: str = None, end_date: str = None)
         - kurtosis: 峰度
     """
     try:
-        # 获取当前日期和昨天的日期
-        current_date = datetime.now()
-        yesterday = current_date - timedelta(days=1)
 
-        # 如果没有提供日期，默认使用昨天作为结束日期
-        if not end_date:
-            end_date = yesterday  # 使用昨天作为结束日期
-        else:
-            end_date = datetime.strptime(end_date, "%Y-%m-%d")
-            # 确保end_date不会超过昨天
-            if end_date > yesterday:
-                end_date = yesterday
-
-        if not start_date:
-            start_date = end_date - timedelta(days=365)  # 默认获取一年的数据
-        else:
-            start_date = datetime.strptime(start_date, "%Y-%m-%d")
-
-        _log.info(f"\n正在获取 {symbol} 的历史行情数据...")
-        _log.info(f"开始日期：{start_date.strftime('%Y-%m-%d')}")
-        _log.info(f"结束日期：{end_date.strftime('%Y-%m-%d')}")
+        _log.info(f"正在获取 {symbol} 的历史行情数据...")
+        _log.info(f"开始日期：{start_date}")
+        _log.info(f"结束日期：{end_date}")
 
         def get_and_process_data(start_date, end_date):
 
@@ -360,8 +345,8 @@ def get_price_history(symbol: str, start_date: str = None, end_date: str = None)
             """获取并处理数据，包括重命名列等操作"""
             df_daily = pro.bak_daily(
                 ts_code=ts_code,
-                start_date=start_date.strftime("%Y%m%d"),
-                end_date=end_date.strftime("%Y%m%d"),
+                start_date=start_date,
+                end_date=end_date,
                 fields="trade_date,open,high,low,close,vol,amount,swing,pct_change,change,turn_over",
             )
 
@@ -518,7 +503,7 @@ def get_price_history(symbol: str, start_date: str = None, end_date: str = None)
         # 检查并报告NaN值
         nan_columns = df.isna().sum()
         if nan_columns.any():
-            _log.warning("\n警告：以下指标存在NaN值：")
+            _log.warning("警告：以下指标存在NaN值：")
             for col, nan_count in nan_columns[nan_columns > 0].items():
                 _log.warning(f"- {col}: {nan_count}条")
 

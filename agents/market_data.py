@@ -50,16 +50,14 @@ def market_data_agent(state: AgentState):
     if not isinstance(prices_df, pd.DataFrame):
         prices_df = pd.DataFrame(columns=["close", "open", "high", "low", "volume"])
 
-    # 转换价格数据为字典格式
-    prices_dict = prices_df.to_dict("records")
-
+    _log.debug(f"prices_df: {prices_df}")
     _log.debug(f"messages[-1].content: {messages[-1].content}")
 
     return {
         "messages": messages,
         "data": {
             **data,
-            "prices": prices_dict,
+            "prices": prices_df,
             "financial_metrics": financial_metrics,
             "financial_line_items": financial_line_items,
             "market_cap": market_data.get("market_cap", 0),
