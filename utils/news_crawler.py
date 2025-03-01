@@ -5,8 +5,10 @@ from datetime import datetime
 import akshare as ak
 import pandas as pd
 
-from utils.my_logging import PROJECT_ROOT
+from utils.my_logging import PROJECT_ROOT, get_logger
 from utils.openrouter_config import get_chat_completion
+
+_log = get_logger(__name__)
 
 
 def get_stock_news(symbol: str, max_news: int = 10) -> list:
@@ -124,14 +126,14 @@ def get_stock_news(symbol: str, max_news: int = 10) -> list:
             save_data = {"date": today, "news": news_list}
             with open(news_file, "w", encoding="utf-8") as f:
                 json.dump(save_data, f, ensure_ascii=False, indent=2)
-            print(f"成功保存{len(news_list)}条新闻到文件: {news_file}")
+            _log.info(f"成功保存{len(news_list)}条新闻到文件: {news_file}")
         except Exception as e:
-            print(f"保存新闻数据到文件时出错: {e}")
+            _log.exception("保存新闻数据到文件时出错:")
 
         return news_list
 
     except Exception as e:
-        print(f"获取新闻数据时出错: {e}")
+        _log.exception("获取新闻数据时出错:")
         return []
 
 
@@ -164,19 +166,19 @@ def get_news_sentiment(news_list: list, num_of_news: int = 5) -> float:
 
     # 检查缓存
     if os.path.exists(cache_file):
-        print("发现情感分析缓存文件")
+        _log.info("发现情感分析缓存文件")
         try:
             with open(cache_file, "r", encoding="utf-8") as f:
                 cache = json.load(f)
                 if news_key in cache:
-                    print("使用缓存的情感分析结果")
+                    _log.info("使用缓存的情感分析结果")
                     return cache[news_key]
-                print("未找到匹配的情感分析缓存")
+                _log.info("未找到匹配的情感分析缓存")
         except Exception as e:
-            print(f"读取情感分析缓存出错: {e}")
+            _log.exception("读取情感分析缓存出错:")
             cache = {}
     else:
-        print("未找到情感分析缓存文件，将创建新文件")
+        _log.info("未找到情感分析缓存文件，将创建新文件")
         cache = {}
 
     # 准备系统消息
@@ -227,15 +229,18 @@ def get_news_sentiment(news_list: list, num_of_news: int = 5) -> float:
         # 获取LLM分析结果
         result = get_chat_completion([system_message, user_message])
         if result is None:
-            print("Error: PI error occurred, LLM returned None")
+            _log.error("Error: PI error occurred, LLM returned None")
             return 0.0
 
         # 提取数字结果
         try:
-            sentiment_score = float(result.strip())
+            # Parse the JSON string into a dictionary
+            result_dict = json.loads(result)
+            # Extract the sentiment score from the dictionary
+            sentiment_score = float(result_dict["sentiment_score"])
         except ValueError as e:
-            print(f"Error parsing sentiment score: {e}")
-            print(f"Raw result: {result}")
+            _log.exception("Error parsing sentiment score:")
+            _log.error(f"Raw result: {result}")
             return 0.0
 
         # 确保分数在-1到1之间
@@ -247,10 +252,10 @@ def get_news_sentiment(news_list: list, num_of_news: int = 5) -> float:
             with open(cache_file, "w", encoding="utf-8") as f:
                 json.dump(cache, f, ensure_ascii=False, indent=2)
         except Exception as e:
-            print(f"Error writing cache: {e}")
+            _log.exception("Error writing cache:")
 
         return sentiment_score
 
     except Exception as e:
-        print(f"Error analyzing news sentiment: {e}")
+        _log.exception("Error analyzing news sentiment:")
         return 0.0  # 出错时返回中性分数

@@ -62,7 +62,7 @@ def get_financial_metrics(symbol: str) -> Dict[str, Any]:
                 _log.warning("警告：无法获取利润表数据")
                 latest_income = pd.Series()
         except Exception as e:
-            _log.exception("获取利润表数据时出错：", e)
+            _log.exception("获取利润表数据时出错:")
             latest_income = pd.Series()
 
         # 构建完整指标数据
@@ -140,11 +140,11 @@ def get_financial_metrics(symbol: str) -> Dict[str, Any]:
             return [agent_metrics]
 
         except Exception as e:
-            _log.exception("构建指标数据时出错：", e)
+            _log.exception("构建指标数据时出错:")
             return [{}]
 
     except Exception as e:
-        _log.exception("获取财务指标时出错：", e)
+        _log.exception("获取财务指标时出错:")
         return [{}]
 
 
@@ -166,7 +166,7 @@ def get_financial_statements(symbol: str) -> Dict[str, Any]:
                 latest_balance = pd.Series()
                 previous_balance = pd.Series()
         except Exception as e:
-            _log.exception("获取资产负债表数据时出错：", e)
+            _log.exception("获取资产负债表数据时出错:")
             latest_balance = pd.Series()
             previous_balance = pd.Series()
 
@@ -183,7 +183,7 @@ def get_financial_statements(symbol: str) -> Dict[str, Any]:
                 latest_income = pd.Series()
                 previous_income = pd.Series()
         except Exception as e:
-            _log.exception("获取利润表数据时出错：", e)
+            _log.exception("获取利润表数据时出错:")
             latest_income = pd.Series()
             previous_income = pd.Series()
 
@@ -200,7 +200,7 @@ def get_financial_statements(symbol: str) -> Dict[str, Any]:
                 latest_cash_flow = pd.Series()
                 previous_cash_flow = pd.Series()
         except Exception as e:
-            _log.exception("获取现金流量表数据时出错：", e)
+            _log.exception("获取现金流量表数据时出错:")
             latest_cash_flow = pd.Series()
             previous_cash_flow = pd.Series()
 
@@ -249,7 +249,7 @@ def get_financial_statements(symbol: str) -> Dict[str, Any]:
             _log.info("成功处理上一期间数据")
 
         except Exception as e:
-            _log.exception("处理财务数据时出错：", e)
+            _log.exception("处理财务数据时出错:")
             default_item = {
                 "net_income": 0,
                 "operating_revenue": 0,
@@ -264,7 +264,7 @@ def get_financial_statements(symbol: str) -> Dict[str, Any]:
         return line_items
 
     except Exception as e:
-        _log.exception("获取财务报表时出错：", e)
+        _log.exception("获取财务报表时出错:")
         default_item = {
             "net_income": 0,
             "operating_revenue": 0,
@@ -294,7 +294,7 @@ def get_market_data(symbol: str) -> Dict[str, Any]:
         }
 
     except Exception as e:
-        _log.exception("获取市场数据时出错：", e)
+        _log.exception("获取市场数据时出错:")
         return {}
 
 
@@ -352,6 +352,7 @@ def get_price_history(ticker: str, start_date: str = None, end_date: str = None)
                 end_date=ts_end_date,
                 fields="trade_date,open,high,low,close,vol,amount,swing,pct_change,change,turn_over",
             )
+            _log.debug(f"获取到的原始数据：\n{df_daily}")
 
             if df_daily is None or df_daily.empty:
                 return pd.DataFrame()
@@ -513,7 +514,7 @@ def get_price_history(ticker: str, start_date: str = None, end_date: str = None)
         return df
 
     except Exception as e:
-        _log.exception("获取历史行情数据时出错：", e)
+        _log.exception("获取历史行情数据时出错:")
         return pd.DataFrame()
 
 
@@ -549,7 +550,7 @@ def prices_to_df(prices):
 
         return df
     except Exception as e:
-        _log.exception("转换价格数据时出错: ", e)
+        _log.exception("转换价格数据时出错:")
         # 返回一个包含必要列的空DataFrame
         return pd.DataFrame(columns=["close", "open", "high", "low", "volume"])
 

@@ -4,6 +4,7 @@ import json
 
 from langchain_core.messages import HumanMessage
 
+from agents.a_share_data import a_share_data_agent
 from graph.state import AgentState, show_agent_reasoning
 
 
@@ -11,62 +12,72 @@ def valuation_agent(state: AgentState):
     """Performs detailed valuation analysis using multiple methodologies."""
     show_reasoning = state["metadata"]["show_reasoning"]
     data = state["data"]
-    ticker = data["ticker"]
-    metrics = data["financial_metrics"][0]
-    current_financial_line_item = data["financial_line_items"][0]
-    previous_financial_line_item = data["financial_line_items"][1]
-    market_cap = data["market_cap"]
+    tickers = data["tickers"]
 
-    reasoning = {}
+    valuation_analysis = {}
+    for ticker in tickers:
+        metrics = data[a_share_data_agent.__name__][ticker]["financial_metrics"][0]
+        current_financial_line_item = data[a_share_data_agent.__name__][ticker]["financial_line_items"][0]
+        previous_financial_line_item = data[a_share_data_agent.__name__][ticker]["financial_line_items"][1]
+        market_cap = data[a_share_data_agent.__name__][ticker]["market_cap"]
 
-    # Calculate working capital change
-    working_capital_change = (current_financial_line_item.get("working_capital") or 0) - (
-        previous_financial_line_item.get("working_capital") or 0
-    )
+        reasoning = {}
 
-    # Owner Earnings Valuation (Buffett Method)
-    owner_earnings_value = calculate_owner_earnings_value(
-        net_income=current_financial_line_item.get("net_income"),
-        depreciation=current_financial_line_item.get("depreciation_and_amortization"),
-        capex=current_financial_line_item.get("capital_expenditure"),
-        working_capital_change=working_capital_change,
-        growth_rate=metrics["earnings_growth"],
-        required_return=0.15,
-        margin_of_safety=0.25,
-    )
+        # Calculate working capital change
+        working_capital_change = (current_financial_line_item.get("working_capital") or 0) - (
+            previous_financial_line_item.get("working_capital") or 0
+        )
 
-    # DCF Valuation
-    dcf_value = calculate_intrinsic_value(
-        free_cash_flow=current_financial_line_item.get("free_cash_flow"),
-        growth_rate=metrics["earnings_growth"],
-        discount_rate=0.10,
-        terminal_growth_rate=0.03,
-        num_years=5,
-    )
+        # Owner Earnings Valuation (Buffett Method)
+        owner_earnings_value = calculate_owner_earnings_value(
+            net_income=current_financial_line_item.get("net_income"),
+            depreciation=current_financial_line_item.get("depreciation_and_amortization"),
+            capex=current_financial_line_item.get("capital_expenditure"),
+            working_capital_change=working_capital_change,
+            growth_rate=metrics["earnings_growth"],
+            required_return=0.15,
+            margin_of_safety=0.25,
+        )
 
-    # Calculate combined valuation gap (average of both methods)
-    dcf_gap = (dcf_value - market_cap) / market_cap
-    owner_earnings_gap = (owner_earnings_value - market_cap) / market_cap
-    valuation_gap = (dcf_gap + owner_earnings_gap) / 2
+        # DCF Valuation
+        dcf_value = calculate_intrinsic_value(
+            free_cash_flow=current_financial_line_item.get("free_cash_flow"),
+            growth_rate=metrics["earnings_growth"],
+            discount_rate=0.10,
+            terminal_growth_rate=0.03,
+            num_years=5,
+        )
 
-    if valuation_gap > 0.10:  # Changed from 0.15 to 0.10 (10% undervalued)
-        signal = "bullish"
-    elif valuation_gap < -0.20:  # Changed from -0.15 to -0.20 (20% overvalued)
-        signal = "bearish"
-    else:
-        signal = "neutral"
+        # Calculate combined valuation gap (average of both methods)
+        dcf_gap = (dcf_value - market_cap) / market_cap
+        owner_earnings_gap = (owner_earnings_value - market_cap) / market_cap
+        valuation_gap = (dcf_gap + owner_earnings_gap) / 2
 
-    reasoning["dcf_analysis"] = {
-        "signal": "bullish" if dcf_gap > 0.10 else "bearish" if dcf_gap < -0.20 else "neutral",
-        "details": f"Intrinsic Value: ${dcf_value:,.2f}, Market Cap: ${market_cap:,.2f}, Gap: {dcf_gap:.1%}",
-    }
+        if valuation_gap > 0.10:  # Changed from 0.15 to 0.10 (10% undervalued)
+            signal = "bullish"
+        elif valuation_gap < -0.20:  # Changed from -0.15 to -0.20 (20% overvalued)
+            signal = "bearish"
+        else:
+            signal = "neutral"
 
-    reasoning["owner_earnings_analysis"] = {
-        "signal": "bullish" if owner_earnings_gap > 0.10 else "bearish" if owner_earnings_gap < -0.20 else "neutral",
-        "details": f"Owner Earnings Value: ${owner_earnings_value:,.2f}, Market Cap: ${market_cap:,.2f}, Gap: {owner_earnings_gap:.1%}",
-    }
+        reasoning["dcf_analysis"] = {
+            "signal": "bullish" if dcf_gap > 0.10 else "bearish" if dcf_gap < -0.20 else "neutral",
+            "details": f"Intrinsic Value: ${dcf_value:,.2f}, Market Cap: ${market_cap:,.2f}, Gap: {dcf_gap:.1%}",
+        }
 
-    valuation_analysis = {"signal": signal, "confidence": f"{abs(valuation_gap):.0%}", "reasoning": reasoning}
+        reasoning["owner_earnings_analysis"] = {
+            "signal": (
+                "bullish" if owner_earnings_gap > 0.10 else "bearish" if owner_earnings_gap < -0.20 else "neutral"
+            ),
+            "details": f"Owner Earnings Value: ${owner_earnings_value:,.2f}, Market Cap: ${market_cap:,.2f}, Gap: {owner_earnings_gap:.1%}",
+        }
+
+        confidence = round(abs(valuation_gap), 2) * 100
+        valuation_analysis[ticker] = {
+            "signal": signal,
+            "confidence": confidence,
+            "reasoning": reasoning,
+        }
 
     message = HumanMessage(
         content=json.dumps(valuation_analysis),
@@ -76,7 +87,7 @@ def valuation_agent(state: AgentState):
     if show_reasoning:
         show_agent_reasoning(valuation_analysis, "Valuation Analysis Agent")
 
-    state["data"]["analyst_signals"][valuation_agent.__name__] = {ticker: valuation_analysis}
+    state["data"]["analyst_signals"][valuation_agent.__name__] = valuation_analysis
 
     return {
         "messages": [message],

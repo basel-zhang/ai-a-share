@@ -54,11 +54,11 @@ def generate_content_with_retry(model, contents, config=None):
             time.sleep(5)
             raise
 
-        _log.exception(f"{ERROR_ICON} API 调用失败: ", e)
+        _log.exception(f"{ERROR_ICON} API 调用失败:")
         raise
 
 
-def get_chat_completion(messages, model=None, max_retries=3, initial_retry_delay=1):
+def get_chat_completion(messages, model=None, max_retries=3, initial_retry_delay=1) -> str:
     """获取聊天完成结果，包含重试逻辑"""
     try:
         if model is None:
@@ -105,15 +105,15 @@ def get_chat_completion(messages, model=None, max_retries=3, initial_retry_delay
                 return response.text
 
             except Exception as e:
-                _log.exception(f"{ERROR_ICON} 尝试 {attempt + 1}/{max_retries} 失败: ", e)
+                _log.exception(f"{ERROR_ICON} 尝试 {attempt + 1}/{max_retries} 失败:")
                 if attempt < max_retries - 1:
                     retry_delay = initial_retry_delay * (2**attempt)
                     _log.info(f"{WAIT_ICON} 等待 {retry_delay} 秒后重试...")
                     time.sleep(retry_delay)
                 else:
-                    _log.exception(f"{ERROR_ICON} 最终错误: ", e)
+                    _log.exception(f"{ERROR_ICON} 最终错误:")
                     return None
 
     except Exception as e:
-        _log.exception(f"{ERROR_ICON} get_chat_completion 发生错误: ", e)
+        _log.exception(f"{ERROR_ICON} get_chat_completion 发生错误:")
         return None

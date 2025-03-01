@@ -8,22 +8,22 @@ from agents.valuation import valuation_agent
 
 # Define analyst configuration - single source of truth
 ANALYST_CONFIG = {
-    "technical_analyst": {
+    technical_analyst_agent.__name__: {
         "display_name": "Technical Analyst",
         "agent_func": technical_analyst_agent,
         "order": 4,
     },
-    "fundamentals_analyst": {
+    fundamentals_agent.__name__: {
         "display_name": "Fundamentals Analyst",
         "agent_func": fundamentals_agent,
         "order": 5,
     },
-    "sentiment_analyst": {
+    sentiment_agent.__name__: {
         "display_name": "Sentiment Analyst",
         "agent_func": sentiment_agent,
         "order": 6,
     },
-    "valuation_analyst": {
+    valuation_agent.__name__: {
         "display_name": "Valuation Analyst",
         "agent_func": valuation_agent,
         "order": 7,
@@ -38,4 +38,4 @@ ANALYST_ORDER = [
 
 def get_analyst_nodes():
     """Get the mapping of analyst keys to their (node_name, agent_func) tuples."""
-    return {key: (f"{key}_agent", config["agent_func"]) for key, config in ANALYST_CONFIG.items()}
+    return {key: (key, config["agent_func"]) for key, config in ANALYST_CONFIG.items()}

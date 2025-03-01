@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from langchain_core.messages import HumanMessage
 
+from agents.a_share_data import a_share_data_agent
 from graph.state import AgentState, show_agent_reasoning
 from utils.my_logging import get_logger
 
@@ -26,76 +27,80 @@ def technical_analyst_agent(state: AgentState):
     """
     show_reasoning = state["metadata"]["show_reasoning"]
     data = state["data"]
-    ticker = data["ticker"]
-    prices_df = data["prices"]
+    tickers = data["tickers"]
 
-    # 1. Trend Following Strategy
-    trend_signals = calculate_trend_signals(prices_df)
+    technical_analysis = {}
+    for ticker in tickers:
+        prices_df = data[a_share_data_agent.__name__][ticker]["prices"]
+        _log.debug(f"prices_df: {prices_df}")
 
-    # 2. Mean Reversion Strategy
-    mean_reversion_signals = calculate_mean_reversion_signals(prices_df)
+        # 1. Trend Following Strategy
+        trend_signals = calculate_trend_signals(prices_df)
 
-    # 3. Momentum Strategy
-    momentum_signals = calculate_momentum_signals(prices_df)
+        # 2. Mean Reversion Strategy
+        mean_reversion_signals = calculate_mean_reversion_signals(prices_df)
 
-    # 4. Volatility Strategy
-    volatility_signals = calculate_volatility_signals(prices_df)
+        # 3. Momentum Strategy
+        momentum_signals = calculate_momentum_signals(prices_df)
 
-    # 5. Statistical Arbitrage Signals
-    stat_arb_signals = calculate_stat_arb_signals(prices_df)
+        # 4. Volatility Strategy
+        volatility_signals = calculate_volatility_signals(prices_df)
 
-    # Combine all signals using a weighted ensemble approach
-    strategy_weights = {
-        "trend": 0.30,
-        "mean_reversion": 0.25,  # Increased weight for mean reversion
-        "momentum": 0.25,
-        "volatility": 0.15,
-        "stat_arb": 0.05,
-    }
+        # 5. Statistical Arbitrage Signals
+        stat_arb_signals = calculate_stat_arb_signals(prices_df)
 
-    combined_signal = weighted_signal_combination(
-        {
-            "trend": trend_signals,
-            "mean_reversion": mean_reversion_signals,
-            "momentum": momentum_signals,
-            "volatility": volatility_signals,
-            "stat_arb": stat_arb_signals,
-        },
-        strategy_weights,
-    )
+        # Combine all signals using a weighted ensemble approach
+        strategy_weights = {
+            "trend": 0.30,
+            "mean_reversion": 0.25,  # Increased weight for mean reversion
+            "momentum": 0.25,
+            "volatility": 0.15,
+            "stat_arb": 0.05,
+        }
 
-    # Generate detailed analysis report
-    technical_analysis = {
-        "signal": combined_signal["signal"],
-        "confidence": f"{round(combined_signal['confidence'] * 100)}%",
-        "strategy_signals": {
-            "trend_following": {
-                "signal": trend_signals["signal"],
-                "confidence": f"{round(trend_signals['confidence'] * 100)}%",
-                "metrics": normalize_pandas(trend_signals["metrics"]),
+        combined_signal = weighted_signal_combination(
+            {
+                "trend": trend_signals,
+                "mean_reversion": mean_reversion_signals,
+                "momentum": momentum_signals,
+                "volatility": volatility_signals,
+                "stat_arb": stat_arb_signals,
             },
-            "mean_reversion": {
-                "signal": mean_reversion_signals["signal"],
-                "confidence": f"{round(mean_reversion_signals['confidence'] * 100)}%",
-                "metrics": normalize_pandas(mean_reversion_signals["metrics"]),
+            strategy_weights,
+        )
+
+        # Generate detailed analysis report
+        technical_analysis[ticker] = {
+            "signal": combined_signal["signal"],
+            "confidence": round(combined_signal["confidence"] * 100),
+            "strategy_signals": {
+                "trend_following": {
+                    "signal": trend_signals["signal"],
+                    "confidence": round(trend_signals['confidence'] * 100),
+                    "metrics": normalize_pandas(trend_signals["metrics"]),
+                },
+                "mean_reversion": {
+                    "signal": mean_reversion_signals["signal"],
+                    "confidence": round(mean_reversion_signals['confidence'] * 100),
+                    "metrics": normalize_pandas(mean_reversion_signals["metrics"]),
+                },
+                "momentum": {
+                    "signal": momentum_signals["signal"],
+                    "confidence": round(momentum_signals['confidence'] * 100),
+                    "metrics": normalize_pandas(momentum_signals["metrics"]),
+                },
+                "volatility": {
+                    "signal": volatility_signals["signal"],
+                    "confidence": round(volatility_signals['confidence'] * 100),
+                    "metrics": normalize_pandas(volatility_signals["metrics"]),
+                },
+                "statistical_arbitrage": {
+                    "signal": stat_arb_signals["signal"],
+                    "confidence": round(stat_arb_signals['confidence'] * 100),
+                    "metrics": normalize_pandas(stat_arb_signals["metrics"]),
+                },
             },
-            "momentum": {
-                "signal": momentum_signals["signal"],
-                "confidence": f"{round(momentum_signals['confidence'] * 100)}%",
-                "metrics": normalize_pandas(momentum_signals["metrics"]),
-            },
-            "volatility": {
-                "signal": volatility_signals["signal"],
-                "confidence": f"{round(volatility_signals['confidence'] * 100)}%",
-                "metrics": normalize_pandas(volatility_signals["metrics"]),
-            },
-            "statistical_arbitrage": {
-                "signal": stat_arb_signals["signal"],
-                "confidence": f"{round(stat_arb_signals['confidence'] * 100)}%",
-                "metrics": normalize_pandas(stat_arb_signals["metrics"]),
-            },
-        },
-    }
+        }
 
     # Create the technical analyst message
     message = HumanMessage(
@@ -106,7 +111,7 @@ def technical_analyst_agent(state: AgentState):
     if show_reasoning:
         show_agent_reasoning(technical_analysis, "Technical Analyst")
 
-    state["data"]["analyst_signals"][technical_analyst_agent.__name__] = {ticker: technical_analysis}
+    state["data"]["analyst_signals"][technical_analyst_agent.__name__] = technical_analysis
 
     _log.debug(f"message.content: {message.content}")
 

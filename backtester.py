@@ -66,7 +66,7 @@ class Backtester:
                 raise ValueError("无效的股票代码格式")
             _log.info("输入参数验证通过")
         except Exception as e:
-            _log.exception("输入参数验证失败: ", e)
+            _log.exception("输入参数验证失败:")
             raise
 
     def get_agent_decision(self, current_date, lookback_start, portfolio):
