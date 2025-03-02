@@ -6,7 +6,7 @@
 
 系统由以下几个协同工作的 agent 组成：
 
-1. Market Data Analyst - 负责收集和预处理市场数据
+1. A Share Data Agent - 负责收集和预处理市场数据
 2. Valuation Agent - 计算股票内在价值并生成交易信号
 3. Sentiment Agent - 分析市场情绪并生成交易信号
 4. Fundamentals Agent - 分析基本面数据并生成交易信号
@@ -74,7 +74,7 @@ $env:TUSHARE_TOKEN='your-tushare-token-here'
 
 ## Usage
 
-### Running the Hedge Fund
+### Running the analysis
 
 系统支持多种运行方式，可以根据需要组合使用不同的参数：
 
@@ -230,42 +230,6 @@ Final Result:
 
 所有日期格式均为 YYYY-MM-DD。如果使用了 `--show-reasoning` 参数，详细的分析过程也会记录在日志文件中。
 
-## Project Structure
-
-```
-ai-hedge-fund/
-├── src/                         # 源代码目录
-│   ├── agents/                  # agent定义和工作流
-│   │   ├── fundamentals.py      # Fundamentals Agent
-│   │   ├── market_data.py       # Market Data Agent
-│   │   ├── portfolio_manager.py # Portfolio Manager
-│   │   ├── risk_manager.py      # Risk Manager
-│   │   ├── sentiment.py         # Sentiment Agent
-│   │   ├── state.py            # Agent状态管理
-│   │   ├── technicals.py       # Technical Analyst
-│   │   └── valuation.py        # Valuation Agent
-│   ├── data/                   # 数据存储目录
-│   │   ├── sentiment_cache.json # 情绪分析缓存
-│   │   └── stock_news/         # 股票新闻数据
-│   ├── tools/                  # 工具和功能模块
-│   │   ├── api.py              # API接口和数据获取
-│   │   ├── data_analyzer.py    # 数据分析工具
-│   │   ├── news_crawler.py     # 新闻爬取工具
-│   │   ├── openrouter_config.py # OpenRouter配置
-│   │   └── test_*.py           # 测试文件
-│   ├── utils/                  # 通用工具函数
-│   ├── backtester.py          # 回测系统
-│   └── main.py                # 主程序入口
-├── logs/                      # 日志文件目录
-│   ├── api_calls_*.log        # API调用日志
-│   └── backtest_*.log         # 回测结果日志
-├── .env                       # 环境变量配置
-├── .env.example              # 环境变量示例
-├── poetry.lock               # Poetry依赖锁定文件
-├── pyproject.toml            # Poetry项目配置
-└── README.md                 # 项目文档
-```
-
 ## 贡献指南
 
 1. Fork 本仓库
@@ -290,11 +254,11 @@ Market Data Analyst → [Technical/Fundamentals/Sentiment/Valuation Analyst] →
 
 #### Agent 角色和职责
 
-1. **Market Data Analyst**
+1. **A Share Data Agent**
 
    - 作为系统的入口点
    - 负责收集和预处理所有必要的市场数据
-   - 通过 akshare API 获取 A 股市场数据
+   - 通过akshare API以及Tushare获取 A 股市场数据
    - 数据来源：东方财富、新浪财经等
 
 2. **Technical Analyst**
@@ -419,11 +383,13 @@ Market Data Analyst → [Technical/Fundamentals/Sentiment/Valuation Analyst] →
 
 1. **数据采集阶段**
 
-   - Market Data Agent 通过 akshare API 获取实时市场数据：
-     - 股票实时行情（`stock_zh_a_spot_em`）
-     - 历史行情数据（`stock_zh_a_hist`）
-     - 财务指标数据（`stock_financial_analysis_indicator`）
-     - 财务报表数据（`stock_financial_report_sina`）
+   - A Share Data Agent 通过
+      - akshare API 获取实时市场数据：
+         - 股票实时行情（`stock_zh_a_spot_em`）
+         - 财务指标数据（`stock_financial_analysis_indicator`）
+         - 财务报表数据（`stock_financial_report_sina`）
+      - Tushare API 获取历史行情数据：
+         - 股票历史行情（`bak_daily`）
    - 新闻数据通过新浪财经 API 获取
    - 所有数据经过标准化处理和格式化
 
