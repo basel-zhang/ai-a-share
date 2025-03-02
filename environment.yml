@@ -24,6 +24,7 @@ dependencies:
   - backoff
   - isort
   - pytest
+  - rich
   - pip:
     - akshare
     - tushare
