@@ -1,0 +1,48 @@
+@startuml system_architecture
+
+!pragma layout smetana
+
+skinparam componentStyle uml2
+skinparam component {
+  BackgroundColor<<Agent>> LightBlue
+  BorderColor<<Agent>> DarkBlue
+}
+
+package "Data Sources" {
+  [Akshare API] as akshare
+  [Tushare API] as tushare
+  [Sina Finance API] as sina
+}
+
+package "AI Investment System" {
+  [A Share Data Agent]<<Agent>> as data
+  [Technical Agent]<<Agent>> as tech
+  [Fundamentals Agent]<<Agent>> as fund
+  [Sentiment Agent]<<Agent>> as sent
+  [Valuation Agent]<<Agent>> as val
+  [Risk Manager]<<Agent>> as risk
+  [Portfolio Manager]<<Agent>> as port
+}
+
+' Data flow from sources
+akshare --> data : Market Data
+tushare --> data : Historical Data
+sina --> data : Financial Reports
+
+' Data Agent distribution
+data --> tech : Price & Volume Data
+data --> fund : Financial Metrics
+data --> sent : News & Market Data
+data --> val : Financial Statements
+
+' Analysis flow
+tech --> risk : Technical Signals
+fund --> risk : Fundamental Signals
+sent --> risk : Sentiment Signals
+val --> risk : Valuation Signals
+
+' Final decision flow
+risk --> port : Risk Assessment
+port --> [Trading Decision]
+
+@enduml

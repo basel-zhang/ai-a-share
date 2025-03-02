@@ -14,7 +14,7 @@
 6. Risk Manager - 计算风险指标并设置仓位限制
 7. Portfolio Manager - 制定最终交易决策并生成订单
 
-![Screenshot 2024-12-27 at 5 49 56 PM](https://github.com/user-attachments/assets/c281b8c3-d8e6-431e-a05e-d309d306e967)
+![System Architecture](doc/system_architecture.svg)
 
 注意：系统仅模拟交易决策，不进行实际交易。
 
